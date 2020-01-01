@@ -1,0 +1,858 @@
+/**************************************************************************
+ *
+ * This file is part of Buildbot.  Buildbot is free software: you can
+ * redistribute it and/or modify it under the terms of the GNU General Public
+ * License as published by the Free Software Foundation, version 2.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
+ * details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program; if not, write to the Free Software Foundation, Inc., 51
+ * Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ *
+ **************************************************************************/
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <malloc.h>
+#include <stdint.h>
+#include <fcntl.h>
+#include <getopt.h>
+#include <signal.h>
+#include <time.h>
+
+/* change to using htonl, htons, ntohl, ntohs instead? */
+#if defined(LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN__)
+#define cpu_to_be16(_x) ((((_x) & 0xff) << 8) | (((_x) >> 8) & 0xff))
+#define be16_to_cpu cpu_to_be16
+#define cpu_to_be32(_x) (cpu_to_be16(((_x) >> 16) & 0xffff) | \
+			 (cpu_to_be16(((_x) & 0xffff)) << 16))
+#define be32_to_cpu cpu_to_be32
+#elif defined(BIG_ENDIAN) || defined(__BIG_ENDIAN) || defined(__BIG_ENDIAN__)
+#define cpu_to_be16
+#define cpu_to_be32
+#define be16_to_cpu
+#define be32_to_cpu
+#else
+#error Unknown endianness !
+#endif
+
+#define MIN(_a, _b) ((_a) > (_b) ? (_b) : (_a))
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  #include <windows.h>
+  #include "ni488.h"
+#else
+  #include <unistd.h>
+  #include <string.h>
+  #include <errno.h>
+  #include <gpib/ib.h>
+#endif
+
+int  Dev;
+
+const char *ErrorMnemonic[] = {"EDVR", "ECIC", "ENOL", "EADR", "EARG",
+			       "ESAC", "EABO", "ENEB", "EDMA", "",
+			       "EOIP", "ECAP", "EFSO", "", "EBUS",
+			       "ESTB", "ESRQ", "", "", "", "ETAB"};
+
+static int abort_requested = 0;
+static int debug;
+
+static void sigint_handler(int arg)
+	{
+	abort_requested = 1;
+	}
+
+static void GPIBCleanup(int Dev, char* ErrorMsg)
+	{
+	printf("Error : %s\nibsta = 0x%x iberr = %d (%s)\n",
+	       ErrorMsg, ibsta, iberr, ErrorMnemonic[iberr]);
+	if (Dev != -1) {
+		printf("Cleanup: Taking device offline\n");
+		ibonl (Dev, 0);
+	}
+
+	}
+
+static int write_command(char *cmd)
+	{
+	ibwrt (Dev, cmd, strlen(cmd));
+	if (ibsta & ERR)
+		return -1;
+	return 0;
+	}
+
+static int query(char *query, char *buf, int maxsize)
+	{
+	ibwrt (Dev, query, strlen(query));
+	if (ibsta & ERR)
+		return -1;
+
+	ibrd (Dev, buf, maxsize);
+	if (ibsta & ERR)
+		return -1;
+
+	buf[ibcntl - 1] = '\0';
+	return ibcntl;
+	}
+
+struct cmd_hdr
+	{
+	uint8_t cmd;
+	uint8_t csum;
+	uint16_t len;
+	};
+
+struct memory_read_cmd
+	{
+	struct cmd_hdr hdr;
+	uint32_t addr;
+	uint32_t len;
+	};
+
+struct memory_write_cmd
+	{
+	struct cmd_hdr hdr;
+	uint32_t addr;
+	uint32_t len;
+	uint8_t buf[1024];
+	};
+
+static void hexdump(void *_buf, int len)
+	{
+	int i;
+	uint8_t *buf = (uint8_t *)_buf;
+	for(i = 0; i < len; i++)
+		fprintf(stderr, "%02X ", buf[i]);
+	fprintf(stderr, "\n");
+	}
+
+static void build_csum(struct cmd_hdr *hdr)
+	{
+	uint8_t csum = 0;
+	uint32_t i;
+	for(i = 0; i < be16_to_cpu(hdr->len) + sizeof(struct cmd_hdr); i++)
+			csum += ((uint8_t *)hdr)[i];
+	hdr->csum = csum;
+	}
+
+static int write_memory(uint32_t addr, uint8_t *buf, int len)
+{
+	struct memory_write_cmd cmd;
+	struct cmd_hdr hdr;
+	uint16_t responselen;
+	char c;
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.hdr.cmd = 'M';
+	cmd.hdr.len = cpu_to_be16(len + 8);
+	cmd.addr = cpu_to_be32(addr);
+	cmd.len = cpu_to_be32(len);
+
+	memcpy(cmd.buf, buf, len);
+
+	build_csum((struct cmd_hdr *)&cmd);
+	if (debug > 1)
+		hexdump(&cmd, len + 12);
+
+	ibwrt (Dev, &cmd, len + 12);
+	if (ibsta & ERR) {
+		fprintf(stderr, "%s: writing command failed\n", __FUNCTION__);
+		return -1;
+	}
+
+	ibrd(Dev, &c, 1);
+	if (ibcntl != 1 || c != '+')
+
+	{
+	fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+	return -1;
+	}	
+
+	ibrd(Dev, &hdr, sizeof(struct cmd_hdr));
+	if (ibsta & ERR)
+	{	
+		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		return -1;
+	}
+
+	if (ibcntl < (signed)sizeof(hdr))
+	{
+		fprintf(stderr, "%s: short header\n", __FUNCTION__);
+		return -1;
+	}
+
+	if (hdr.cmd != '=') {
+		fprintf(stderr, "%s: invalid response: %c\n", __FUNCTION__, hdr.cmd);
+		return -1;
+	}
+	c = '+';
+	ibwrt(Dev, &c, 1);
+	return 0;
+}
+
+static int read_memory(uint32_t addr, uint8_t *buf, int len)
+{
+
+/* send first TEKTRONIX Password fr TDS5xxB/7xxA models to allow memory dump */
+  //ibwrt (Dev, "PASSWORD PITBULL", 17L);
+	ibwrt (Dev, "PASSWORD PITBULL", 16L);
+	if (ibsta & ERR)
+	{
+		fprintf(stderr, "%s: writing command failed\n", __FUNCTION__);
+		return -1;
+	}
+	struct memory_read_cmd cmd;
+	struct cmd_hdr hdr;
+	int responselen;
+	char c;
+
+	memset(&cmd, 0, sizeof(cmd));
+	cmd.hdr.cmd = 'm';
+	cmd.hdr.len = cpu_to_be16(sizeof(cmd) - 4);
+	cmd.addr = cpu_to_be32(addr);
+	cmd.len = cpu_to_be32(len);
+
+	build_csum((struct cmd_hdr *)&cmd);
+	if (debug > 1)
+		hexdump(&cmd, sizeof(cmd));
+
+	ibwrt (Dev, &cmd, sizeof(struct memory_read_cmd));
+	if (ibsta & ERR)
+	{
+		fprintf(stderr, "%s: writing command failed\n", __FUNCTION__);
+		return -1;
+	}
+
+	ibrd(Dev, &c, 1);
+	if (ibcntl != 1 || c != '+')
+	{
+		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		return -1;
+	}
+	
+	ibrd(Dev, &hdr, sizeof(struct cmd_hdr));
+	if (ibsta & ERR)
+	{
+		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		return -1;
+	}
+
+	if (ibcntl < (signed)sizeof(hdr))
+	{
+		fprintf(stderr, "%s: short header\n", __FUNCTION__);
+		return -1;
+	}
+
+	if (hdr.cmd != '=')
+	{
+		fprintf(stderr, "%s: invalid response: %c\n", __FUNCTION__, hdr.cmd);
+		return -1;
+	}
+
+	responselen = be16_to_cpu(hdr.len);
+
+	if (responselen != len)
+	{
+		fprintf(stderr, "%s: short response\n", __FUNCTION__);
+		return -1;
+	}
+
+	ibrd(Dev, buf, responselen);
+	if (ibsta & ERR || ibcntl < len)
+	{
+		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		return -1;
+	}
+
+	c = '+';
+	ibwrt(Dev, &c, 1);
+	if (ibsta & ERR)
+	{
+		fprintf(stderr, "%s: unable to send ACK\n", __FUNCTION__);
+		return -1;
+	}
+
+	return 0;
+}
+
+static struct option long_options[] =
+{
+	{ "read", required_argument, 0, 'r' },
+	{ "write", required_argument, 0, 'w' },
+	{ "base", required_argument, 0, 'b' },
+	{ "length", required_argument, 0, 'l' },
+	{ "debug", no_argument, 0, 'd' },
+	{ "flash-id", no_argument, 0, 'i' },
+	{ "flash-erase", no_argument, 0, 'e' },
+	{ "flash-program", required_argument, 0, 'p' },
+	{ "help", no_argument, 0, 'h' },
+	{ NULL, 0, 0, 0 }
+};
+
+static void usage(void)
+{
+	fprintf(stderr, "usage:\n"
+		"--read         -r <filename>  read from memory to file\n"
+		"--write        -w <filename>  read from file to memory\n"
+		"--base         -b <base>      base address for read/write/program\n"
+		"--length       -l <length>    length of data to be read or written\n"
+		"--debug        -d             enable debug logging\n"
+		"--flash-id     -i             print ID of flash chips\n"
+		"--flash-erase  -e             erase flash at base address\n"
+		"--flsh-program -p             program flash at base address\n"
+		"");
+}
+
+static uint32_t to_number(char *s)
+{
+	uint32_t val;
+	char *endp;
+
+	if (*s == '0' && *(s+1) == 'x')
+	{
+		val = strtoul(s+2, &endp, 16);
+		if (*endp != '\0') {
+			fprintf(stderr, "failed to parse: [%s]\n", s);
+			return 0;
+	}
+	}	
+
+	 else
+	{
+		val = strtoul(s, &endp, 10);
+		if (*endp != '\0') {
+			fprintf(stderr, "failed to parse: [%s]\n", s);
+			return 0;
+	}
+	}
+	return val;
+}
+
+static int flash_command(uint32_t base, uint8_t cmd)
+	{
+	uint8_t buf[4];
+
+	base &= ~0x1ffff;
+	buf[0] = cmd;
+	buf[1] = cmd;
+	buf[2] = cmd;
+	buf[3] = cmd;
+
+//	fprintf(stderr, "flash command 0x%02X\n", cmd);
+	if (write_memory(base, buf, sizeof(buf)) == -1) {
+		fprintf(stderr, "flash command failed\n");
+		return -1;
+	}
+	return 0;
+}
+
+static int flash_wait_sr(uint32_t base, uint16_t mask, uint16_t result, int tries)
+	{
+	uint32_t buf;
+	uint32_t _mask = (mask << 16) | mask;
+	uint32_t _result = (result << 16) | result;
+	int ret = -1;
+
+	while(tries-- && !abort_requested)
+	{
+		if (read_memory(base, (uint8_t *)&buf, sizeof(buf)) == -1)
+			goto out;
+
+		fprintf(stderr, "SR: 0x%08x\n", be32_to_cpu(buf));
+		if ((be32_to_cpu(buf) & _mask) == _result)
+			break;
+		usleep(200000);
+	}
+
+	if (!tries || abort_requested)
+		return -1;
+	ret = 0;
+out:
+	return ret;
+	}
+
+static int flash_wait_gsr(uint32_t base, uint16_t mask, uint16_t result, int tries)
+{
+	uint32_t buf;
+	uint32_t _mask = (mask << 16) | mask;
+	uint32_t _result = (result << 16) | result;
+	int ret = -1;
+
+	base &= ~0x1fffff;
+
+	while(tries-- && !abort_requested)
+	{
+		if (read_memory(base + 8, (uint8_t *)&buf, sizeof(buf)) == -1)
+			goto out;
+
+//		fprintf(stderr, "GSR 0x%08x: 0x%08x\n", base, be32_to_cpu(buf));
+		if ((be32_to_cpu(buf) & _mask) == _result)
+			break;
+		usleep(20000);
+	}
+
+	if (!tries || abort_requested)
+		return -1;
+	ret = 0;
+out:
+	return ret;
+}
+
+static int flash_wait_bsr(uint32_t base, uint16_t mask, uint16_t result, int tries)
+{
+	uint32_t buf;
+	uint32_t _mask = (mask << 16) | mask;
+	uint32_t _result = (result << 16) | result;
+	int ret = -1;
+
+	base &= ~0xffff;
+	while(tries-- && !abort_requested)
+	{
+		if (read_memory(base + 4, (uint8_t *)&buf, sizeof(buf)) == -1)
+			goto out;
+
+//		fprintf(stderr, "BSR 0x%08x: 0x%08x (%08x/%08x)\n", base, be32_to_cpu(buf), _mask, _result);
+		if ((be32_to_cpu(buf) & _mask) == _result)
+			break;
+		usleep(20000);
+	}
+
+	if (!tries || abort_requested)
+		return -1;
+	ret = 0;
+out:
+	return ret;
+}
+
+static int flash_identify(uint32_t base)
+{
+	uint32_t buf;
+	int ret = -1;
+
+	fprintf(stderr, "base: %08x\n", base);
+	if (flash_command(base, 0x90) == -1)
+		goto out;
+
+	if (read_memory(base, (uint8_t *)&buf, sizeof(buf)) == -1)
+		goto out;
+
+	printf("Flash ID1: 0x%08x\n", buf);
+	if (buf != 0x89008900)
+		goto out;
+
+	if (read_memory(base + 4, (uint8_t *)&buf, sizeof(buf)) == -1)
+		return -1;
+	printf("Flash ID2: 0x%08x\n", buf);
+	if (buf != 0xa066a066)
+		goto out;
+
+	ret = 0;
+out:
+	if (flash_command(base, 0x90) == -1)
+		return -1;
+	return ret;
+}
+
+static int flash_erase(uint32_t base)
+{
+	uint32_t buf = cpu_to_be32(0xa700a7);
+	int i, ret = -1;
+
+	if (flash_command(base, 0xa7) == -1)
+		goto out;
+
+	if (flash_command(base, 0xd0) == -1)
+		goto out;
+
+	if (flash_wait_sr(base, 0x0080, 0x0080, 1000) == -1)
+		goto out;
+
+	ret = 0;
+out:
+	if (flash_command(base, 0xff) == -1)
+		return -1;
+	return ret;
+
+}
+
+static int flash_program(uint32_t base, uint32_t data)
+{
+	uint32_t buf = cpu_to_be32(0x00400040);
+	int i, ret = -1;
+
+	if (flash_command(base, 0x40) == -1)
+		goto out;
+
+	if (write_memory(base, (uint8_t *)&data, sizeof(data)) == -1)
+		goto out;
+
+	if (flash_wait_sr(base, 0x0080, 0x0080, 1000) == -1)
+		goto out;
+
+	ret = 0;
+out:
+	if (flash_command(base, 0xff) == -1)
+		return -1;
+	return ret;
+}
+
+static int flash_load_to_pagebuffer(uint32_t base, uint8_t *data)
+{
+	uint32_t buf;
+	int ret = -1;
+
+//	fprintf(stderr, "%s: %08x\n", __FUNCTION__, base);
+
+	if (flash_command(base, 0x71) == -1)
+		goto out;
+
+	if (flash_wait_gsr(base, 0x0004, 0x0004, 1000) == -1) {
+		fprintf(stderr, "timeout reading extended status register\n");
+		goto out;
+	}
+
+	if (flash_command(base, 0xe0) == -1)
+		goto out;
+
+	buf = cpu_to_be32(0x007f007f);
+	if (write_memory(base, (uint8_t *)&buf, sizeof(buf)) == -1) {
+		fprintf(stderr, "failed to write low word count\n");
+		goto out;
+	}
+
+	buf = cpu_to_be32(0);
+	if (write_memory(base, (uint8_t *)&buf, sizeof(buf)) == -1) {
+		fprintf(stderr, "failed to write high word count\n");
+		goto out;
+	}
+
+	if (write_memory(base, data, 512) == -1) {
+		fprintf(stderr, "failed to write data to page buffer\n");
+		goto out;
+	}
+	ret = 0;
+out:
+	if (flash_command(base, 0xff) == -1)
+		return -1;
+	return ret;
+}
+
+static int flash_write_pagebuffer(uint32_t base, uint32_t start)
+{
+	int ret = -1;
+	uint32_t buf;
+
+
+//	fprintf(stderr, "%s: %08x\n", __FUNCTION__, base);
+
+	if (flash_command(base, 0x71) == -1)
+		goto out;
+
+	if (flash_wait_bsr(base, 0x0008, 0x0000, 1000) == -1)
+		goto out;
+
+	if (flash_command(base, 0x0c) == -1)
+		goto out;
+
+	buf = cpu_to_be32(0x007f007f);
+	if (write_memory(base, (uint8_t *)&buf, sizeof(buf)) == -1)
+	{
+		fprintf(stderr, "failed to write buffer write to flash command\n");
+		goto out;
+	}
+
+	buf = cpu_to_be32(0);
+	if (write_memory(base, (uint8_t *)&buf, sizeof(buf)) == -1)
+	{
+		fprintf(stderr, "failed to write buffer write to flash command\n");
+		goto out;
+	}
+
+	if (flash_wait_bsr(base, 0x0080, 0x0080, 1000) == -1)
+	{
+		fprintf(stderr, "timeout waiting for pagewrite finish\n");
+		goto out;
+	}
+
+	if (flash_command(base, 0x50) == -1)
+		goto out;
+
+	buf = cpu_to_be32(0xffffffff);
+	if (write_memory(base, (uint8_t *)&buf, sizeof(buf)) == -1)
+	{
+		fprintf(stderr, "failed to write reset status bits\n");
+		goto out;
+	}
+
+	ret = 0;
+out:
+	return ret;
+
+}
+
+static int flash_program_page(uint32_t base, uint8_t *data)
+{
+	uint32_t buf;
+	int i, ret = -1;
+
+	if (debug)
+		fprintf(stderr, "%s\n", __FUNCTION__);
+
+	if (flash_load_to_pagebuffer(base, data) == -1)
+		goto out;
+
+	if (flash_write_pagebuffer(base, base) == -1)
+		goto out;
+
+	if (flash_command(base, 0x50) == -1)
+		goto out;
+
+	ret = 0;
+out:
+	if (flash_command(base, 0xff) == -1)
+		return -1;
+	return ret;
+}
+
+int main(int argc, char **argv)
+{
+	uint32_t len, addr, base = 0, length = 0;
+	char c;
+	uint8_t buf[1024];
+	int val, optidx;
+	FILE *file = NULL;
+	int read_op = 0, write_op = 0, identify_flash_op = 0, erase_flash_op = 0, flash_write_op = 0;
+	int readlen, i;
+	time_t start, now;
+
+	while((c = getopt_long(argc, argv, "r:w:b:l:p:hied",
+			       long_options, &optidx)) != -1)
+	 {
+		switch(c)
+		{
+		case 'h':
+			usage();
+			return 0;
+		case 'l':
+			if (length)
+		{
+				fprintf(stderr, "length given twice");
+				return 1;
+		}
+			length = to_number(optarg);
+			break;
+		case 'b':
+			if (base)
+	{
+				fprintf(stderr, "base given twice");
+				return 1;
+	}
+			base = to_number(optarg);
+			break;
+		case 'r':
+			if (file) {
+				fprintf(stderr, "read given twice");
+				return 1;
+			}
+			file = fopen(optarg, "wb");
+			if (!file) {
+				fprintf(stderr, "failed to open output file: %s\n", strerror(errno));
+				return 1;
+
+			}
+			read_op = 1;
+			break;
+		case 'w':
+			if (file)
+			{
+				fprintf(stderr, "read given twice");
+				return 1;
+			}
+			file = fopen(optarg, "rb");
+			if (!file)
+			{
+				fprintf(stderr, "failed to open input file: %s\n", strerror(errno));
+				return 1;
+
+			}
+
+			write_op = 1;
+			break;
+		case 'p':
+			if (file)
+			{
+				fprintf(stderr, "read given twice");
+				return 1;
+			}
+			file = fopen(optarg, "rb");
+			if (!file)
+			{
+				fprintf(stderr, "failed to open input file: %s\n", strerror(errno));
+				return 1;
+
+			}
+			flash_write_op = 1;
+			break;
+
+		case 'i':
+			identify_flash_op = 1;
+			break;
+		case 'e':
+			erase_flash_op = 1;
+			break;
+		case 'd':
+			debug++;
+			break;
+		}
+	}
+
+	if (!length)
+	{
+		fprintf(stderr, "%s: length required\n", __FUNCTION__);
+		return 1;
+	}
+
+	signal(SIGINT, sigint_handler);
+
+/*device identification - (gpib card, device num, second num, Time out, End of message, disable eos) */
+
+	Dev = ibdev(0, 29, 0, T3s, 1, 0);
+	if (ibsta & ERR)
+	{
+		printf("Unable to open device\nibsta = 0x%x iberr = %d\n",
+		       ibsta, iberr);
+		return 1;
+	}
+
+	ibclr (Dev);
+	if (ibsta & ERR)
+	{
+		GPIBCleanup(Dev, "Unable to clear device");
+		return 1;
+	}
+
+#if 0
+/* Test GPIB communication */
+/* WARNING - DOES NOT WORK WHEN IN NVRAM-UNPROTECTED MODE ON CERTAIN MODELS! */
+    ibwrt (Dev, "*IDN?", 5L);
+    if (ibsta & ERR)
+    {
+       GPIBCleanup(Dev, "Unable to write to device");
+       return 1;
+    }
+
+    ibrd (Dev, buf, 101);
+    if (ibsta & ERR)
+    {
+       GPIBCleanup(Dev, "Unable to read data from device");
+       return 1;
+    }
+#endif
+
+
+
+	if (identify_flash_op)
+	{
+		if (flash_identify(base) == -1)
+		{
+			fprintf(stderr, "identify failed\n");
+			return -1;
+		}
+		return 0;
+	}
+
+	if (erase_flash_op)
+	{
+		if (flash_erase(base) == -1)
+		{
+			fprintf(stderr, "flash erase failed\n");
+			return -1;
+		}
+		return 0;
+	}
+
+	time(&start);
+	for(addr = base; addr < base + length && !abort_requested;)
+	{
+		len = MIN(512, base + length - addr);
+		if (read_op) {
+			if (read_memory(addr, buf, len) == -1)
+				return 1;
+
+			if (fwrite(buf, 1, len, file) != len)
+			{
+				fprintf(stderr, "short write\n");
+				return 1;
+			}
+			addr += len;
+	}
+		 else if (write_op)
+			{
+			readlen = fread(buf, 1, len, file);
+			if (readlen == 0)
+				break;
+
+			if (readlen == -1) {
+				fprintf(stderr, "read: %s\n", strerror(errno));
+				return 1;
+			}
+		if ((addr % 0x1000) == 0)
+				fprintf(stderr, "WRITE %08x %3d%%\r",  addr, ((addr -base) * 100)/length);
+			if (write_memory(addr, buf, readlen) == -1)
+				return 1;
+			addr += readlen;
+	}
+		 else if (flash_write_op)
+			{
+			len = MIN(512, base + length -addr);
+			readlen = fread(buf, 1, len, file);
+			if (readlen == 0)
+				break;
+
+			if (readlen == -1) {
+				fprintf(stderr, "read: %s\n", strerror(errno));
+				return 1;
+			}
+
+			if (readlen < 512)
+			{
+				for(i = 0; i < readlen; i += 4)
+					{
+					if (flash_program(addr + i, ((uint32_t *)buf)[i / 4]) == -1) {
+						fprintf(stderr, "flash programming 4 bytes failed\n");
+						return 1;
+					}
+			}
+			}
+			 else
+			{
+				if (flash_program_page(addr, buf) == -1)
+					{
+					fprintf(stderr, "flash programming of 512 bytes failed\n");
+					return 1;
+					}
+			}
+			addr += readlen;
+			if ((addr % 0x100) == 0)
+				{
+				time(&now);
+				fprintf(stderr, "%08x/%08x, %3d%% %4ds\r", addr - base, length, ((addr - base) * 100) / length, (int)(now - start));
+				}
+		}
+			 else
+			{
+			fprintf(stderr, "either read or write required\n");
+			return 1;
+			}
+	}
+	
+	fclose(file);
+	ibonl(Dev, 0);
+	return 0;
+}

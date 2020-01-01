@@ -1,0 +1,92 @@
+These tools allow you to backup and restore the NVRAM contents 
+of the Tektronix TDS500/600/700 series using the internal
+floppy disk.
+
+By default, all scripts are set to an export size of 640kB (0xA0000),
+which corresponds to the memory range of a 128kB DS1486 plus a 
+512kB DS1250Y in th -C/-D scope models. Early models like the TDS524A
+A-series, only have 0x80000 size of NVRAM, so you should adapt it
+accordingly.
+
+Extract the contents of each script folder, according to your
+requirement, to the root of an error-free FAT (not exFAT or FAT32!) 
+formatted floppy disk. For best compatibility, format it on
+the scope itself.
+
+
+The scripts:
+
+
+tdsNvramFloppyDumper:
+
+Puts interactive messages on screen, dumps the nvram to a file called
+dump.bin. This script uses an intermediate buffer and takes a fast 
+snapshot of the NVRAM, so  other processes cannot interfere with the 
+procedure while writing to disk. Is reported to work only on more 
+recent scopes and firmwares such as the -C and -D series.
+
+
+tdsNvramFloppyWriter:
+
+Puts interactive messages on screen, writes the nvram from a file 
+called writedmp.bin. This script uses an intermediate loading buffer 
+and only writes data to the NVRAM at the very last moment before 
+automatic reboot, so chances are minimal other processes can interfere
+with the procedure. Is reported to work only on more recent scopes and
+firmwares such as the -C and -D series.
+Due to several regions of the NVRAM being write protected, on some scopes 
+(like -A series) is it necessary to flip the calibration switch to 
+enable writing. It must be done at the exact moment the floppy light 
+comes on, as booting with the switch set may only start the device 
+in bootloader mode and it will not proceed to execute the script.
+
+
+tdsNvramMinimalFloppyDumper:
+
+Same as the above dumper, with a very minimal set of commands and no 
+warnings. Should work on any scope including the early -A series, and 
+performs the dump right during the booting process.
+
+
+tdsNvramMinimalFloppyWriter:
+
+
+Same as the above writer, with a very minimal set of commands, no 
+buffering and no warnings. Should work on any scope including the early 
+-A series, and performs the writing right during the booting process. 
+May yield incomplete or bad writing due to the import from floppy disk 
+not being buffered. Remove disk upon automatic reboot. The device may
+also hang instead of reboot upon completion of the writing. Due to
+several regions of the NVRAM being write protected, on some scopes 
+(like -A series) is it necessary to flip the calibration switch to 
+enable writing. It must be done at the exact moment the floppy light 
+comes on, as booting with the switch set may only start the device 
+in bootloader mode and it will not proceed to execute the script.
+
+
+tdsAcqEEPROMFloppyDumper and tdsAcqEEPROMMinimalFloppyDumper:
+
+
+Dumps the contents of the calibration constants 24C04 EEPROMs located
+on the acquisition boards of the -B, -C and -D series scopes, to a file.
+-A series scopes have no such EEPROMs on the acquisition board and
+store these constants in regular NVRAM, albeit in a hardware-protected
+region. Even though there are two 24C04 EEPROMs on the acquisition
+board, there is only support for reading one chip or 0x200 bytes.
+It appears no firmware is using the second chip. This has also been
+confirmed by others attempting to read the chips directly, i.e. that
+the second chip is always empty.
+
+
+
+No warranties and full disclaimer, be careful, these tools might 
+permanently disable an oscilloscope if errors occur or if used improperly!
+
+
+You can use and/or modify these tools as you wish, but please be 
+responsible and inform your buyer when "repairing" a scope with a dump 
+from a different device, as measurements will no longer be accurate as 
+calibrated.
+
+
+- flyte at eevblog.com forum

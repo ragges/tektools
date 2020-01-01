@@ -1,0 +1,17 @@
+# Compiled source #
+###################
+*.pyc
+*.class
+*.o
+*.so
+
+# Backup files #
+################
+*~
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100

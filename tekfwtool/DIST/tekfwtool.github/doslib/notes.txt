@@ -1,0 +1,22 @@
+Extra files required to build a DOS .exe.
+
+**GPIB driver
+DECL.H, MCIB.LIB: from NI 2.7.2 driver for DOS; they provide a .LIB file in Microsof C format.
+
+**getopt
+tekfwtool needs libgetopt; easy to compile.
+source used:
+https://www.flashrom.org/File:Libgetopt.tar.gz
+
+**djgpp :
+There's apparently no way to convert MCIB.LIB to a format understood by djgpp-gcc,
+partly due to memory model issues
+
+** MSC
+-compiling the whole thing with MS C (say v5)
+-solves the NI driver lib issue.
+-sizeof(size_t) == sizeof(unsigned int) !! code assumes 32bit int, anticipate problems
+-MSC5 make.exe v4 sucks
+-MSC6 nmake is different, but sucks also
+-lots of tweaks needed for 8.3 filenames and other garbage
+-MSC looks for its own "SLIBCE.LIB" ? wtf. Give it slibc7.lib

@@ -1,0 +1,14 @@
+
+tdsNvramEepromFloppyDumper:
+
+Puts interactive messages on screen.  Dumps the nvram to a file called
+nvram.bin, and the acquistion calibration eeproms to a file called
+acqeeprm.bin.
+This script uses an intermediate buffer and takes a fast snapshot of
+the NVRAM, so other processes cannot interfere with the procedure
+while writing to disk.
+The original is reported to work only on more recent scopes and
+firmwares such as the -C and -D series.
+
+
+Many rhanks to flyte at eevblog.com forum

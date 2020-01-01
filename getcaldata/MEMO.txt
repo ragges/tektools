@@ -1,0 +1,4 @@
+
+Run with instrument booted normally
+
+Configured for GPIB address 1

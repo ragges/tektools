@@ -1,0 +1,43 @@
+# Modified version to compile a DOS binary with native MS C6 compiler.
+#
+# v0 : uses dummy target-procs.h
+# To use : "nmake /f tfdos"
+#
+# Notes:
+# DOS sucks. 8.3 sucks.
+#
+# CL flags:
+# /Fc  .COD source+asm listing
+# /Fs .LST source listing (prints compiler warnings inline)
+#
+# LINK flag:
+# /nod : don't link against default, for some reason it wants SLIBCE (emulated fpu)
+#
+
+cc=cl
+link=link
+cflags=/c /Idoslib /D__MSDOS__ /Fc
+
+
+tfdos.exe: tfdos.obj doslib\getopt.obj tfdos
+	$(link) /nod \
+	tfdos.obj doslib\getopt.obj doslib\MCIB.LIB,\
+	tfdos.exe,tfdos.map,slibc7;
+
+tfdos.c: tekfwt~1.h tekfwt~2.c
+	copy tekfwt~1.h tfdos.h
+	copy tekfwt~2.c tfdos.c
+
+.c.obj:
+	$(cc) $(cdebug) $(cflags) $(cvars) $*.c
+
+tfdos.obj: tfdos.c
+
+doslib\getopt.obj: doslib\getopt.c
+
+
+
+#can't do this
+#clean:
+#	del *.obj
+#	del tfdos.exe
