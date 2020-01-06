@@ -76,7 +76,7 @@ static int flash_wait_sr(uint32_t *base, uint16_t mask, uint16_t result, int tri
 
 	while(tries--) {
 		//console_log("flash_wait_sr: %08x: %08x\n", base, *(uint32_t *)base);
-		if (*base & _mask == _result)
+		if ((*base & _mask) == _result)
 			break;
 
 		udelay(10000);
@@ -169,7 +169,8 @@ static int flash_erase_intel_sa(uint32_t *base)
 
 static uint8_t csum_hdr(struct gpib_hdr *hdr)
 {
-	int i, csum;
+	uint32_t i;
+	uint8_t csum;
 	uint8_t *buf = (uint8_t *)&hdr;
 
 	csum = buf[0];
@@ -266,11 +267,13 @@ static int flash_program_single_cmd40(uint32_t *base, uint32_t data)
 	if (flash_wait_gsr(base, 0x0080, 0x0080, 1000) == -1)
 		goto out;
 
-out:
 	*base = 0xffffffff;
+	return 0;
+out:
+	return -1;
 }
 
-static int flash_program_page_intel_sa(uint32_t *base, uint32_t *data)
+static int flash_program_page_intel_sa(uint32_t *base, uint32_t *data, uint16_t len)
 {
 	if (flash_load_to_pagebuffer_intel_sa(base, data) == -1)
 		goto out;
@@ -305,8 +308,11 @@ static void flash_program(struct cmd_params *params)
 	if (!current_flash)
 		goto out;
 		
+#if 0
+	/* hard, since len is unsigned. */
 	if (len < 0)
 		goto out;
+#endif
 
 
 	if (current_flash->program_page) {
@@ -318,7 +324,7 @@ static void flash_program(struct cmd_params *params)
 	}
 
 	len /= 4;
-	for(i = 0; i < len; i++) {
+	for(i = 0; i < (int) len; i++) {
 		current_flash->program_single(base + offset, params->cmd->data[i]);
 		offset += 4;
 	}
@@ -366,12 +372,12 @@ static struct flash_descriptor *find_flash(void)
 	int i;
 	
 	id = identify_flash((uint32_t *)0x01000000);
-	if (id & 0xffff != (id >> 16) & 0xffff)
+	if ((id & 0xffff) != ((id >> 16) & 0xffff))
 		return NULL;
 
 	id &= 0xffff;
 
-	for(i = 0; i < ARRAY_SIZE(flash_types); i++) {
+	for(i = 0; i < (int) ARRAY_SIZE(flash_types); i++) {
 		if ((flash_types[i].device == (id & 0xff)) &&
 		   ((flash_types[i].manufacturer == (id >> 8))))
 			return flash_types + i;
