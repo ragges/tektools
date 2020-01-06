@@ -60,6 +60,8 @@ static void GPIBCleanup(int Dev, char* ErrorMsg)
 	}
 }
 
+#if 0
+/* currently not used */
 static int write_command(char *cmd)
 {
 	ibwrt (Dev, cmd, strlen(cmd));
@@ -67,7 +69,10 @@ static int write_command(char *cmd)
 		return -1;
 	return 0;
 }
+#endif
 
+#if 0
+/* currently not used */
 static int query(char *query, char *buf, int maxsize)
 {
 
@@ -82,6 +87,7 @@ static int query(char *query, char *buf, int maxsize)
 	buf[ibcntl - 1] = '\0';
 	return ibcntl;
 }
+#endif
 
 static void hexdump(void *_buf, int len)
 {
@@ -105,7 +111,6 @@ static int write_memory(uint32_t addr, uint8_t *buf, int len)
 {
 	struct memory_write_cmd cmd;
 	struct cmd_hdr hdr;
-	uint16_t responselen;
 	char c;
 
 	memset(&cmd, 0, sizeof(cmd));
@@ -157,7 +162,6 @@ static int branch_cmd(uint32_t addr, uint32_t arg0, uint8_t *data, int *datalen)
 	struct branch_cmd cmd;
 	uint8_t buf[1024];
 	struct cmd_hdr hdr;
-	uint16_t responselen;
 	char c;
 
 	memset(&cmd, 0, sizeof(cmd));
@@ -259,7 +263,7 @@ static int read_memory(uint32_t addr, uint8_t *buf, int len)
 	}
 
 	if (ibcntl < (signed)sizeof(hdr)) {
-		fprintf(stderr, "%s: short header (ibcntl=%l)\n", __FUNCTION__, ibcntl);
+		fprintf(stderr, "%s: short header (ibcntl=%ld)\n", __FUNCTION__, ibcntl);
 		return -1;
 	}
 
@@ -404,10 +408,10 @@ int main(int argc, char **argv)
 	int devaddr = DEFAULT_GPIBADDR;
 	char c;
 	uint8_t buf[1024];
-	int val, optidx;
+	int optidx;
 	FILE *file = NULL;
 	int read_op = 0, write_op = 0, erase_flash_op = 0, flash_write_op = 0;
-	int readlen, i;
+	int readlen;
 	time_t start, now;
 
 	while((c = getopt_long(argc, argv, "a:r:w:b:l:p:hied",
