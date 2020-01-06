@@ -372,6 +372,9 @@ static int flash_command(uint32_t base, uint8_t cmd)
 }
 
 static void my_usleep(uint32_t us) {
+#if defined(__MSDOS__) || defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+	Sleep((us / 1000) + 1); // actually only millisecond resolution, but that should be OK
+#else
 	int ret = -1;
 	struct timespec rqt, rmt;
 	rqt.tv_sec = us / 1000000;
@@ -380,6 +383,7 @@ static void my_usleep(uint32_t us) {
 		ret = nanosleep(&rqt, &rmt);
 		rqt = rmt;
 	}
+#endif
 }
 
 static int flash_wait_sr(uint32_t base, uint16_t mask, uint16_t result, int tries)
