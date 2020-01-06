@@ -1,8 +1,8 @@
 
-CFLAGS=-g -fsigned-char -l gpib -L/usr/local/lib
+CFLAGS=-g -fsigned-char -Wall -Wextra -pedantic -l gpib -L/usr/local/lib
 
 tekfwtool : target-procs.h tekfwtool.c tekfwtool.h
-#	gcc $(CFLAGS) tekfwtool.c -o tekfwtool
+	$(CC) $(CFLAGS) tekfwtool.c -o tekfwtool
 
 .PHONY : clean
 clean :
