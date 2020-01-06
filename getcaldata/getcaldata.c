@@ -23,15 +23,9 @@
 #elif defined(__linux__)
   /* linux with linux-gpib */
   #include <gpib/ib.h>
-  #ifndef _cdecl
-    #define _cdecl
-  #endif
 #elif defined(__APPLE__)
   /* MacOS with NI GPIB drivers */
   #include <ni4882.h>
-  #ifndef _cdecl
-    #define _cdecl
-  #endif
 #else
         #error "Unknown compiler environment!"
 #endif
@@ -51,7 +45,7 @@ void GPIBCleanup(int Dev, char* ErrorMsg);
 static int debug;
 
 
-int _cdecl main(void)  {
+int main(void)  {
 
 /*
  * ========================================================================
