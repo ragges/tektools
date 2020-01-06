@@ -78,9 +78,8 @@ int _cdecl main(void)  {
 #define EOSMODE               0     // Disable the EOS mode
 
 FILE *outfile;
-int f,g;
+int f;
 unsigned long addr;
-unsigned char str[255];
 
 // addr = 0x00040000L; /* CAL data base address on TDS5xxB,6xxA,7xxA*/
 addr = 262144; /* CAL data base address on TDS5xxB,6xxA,7xxA*/
@@ -163,8 +162,8 @@ addr = 262144; /* CAL data base address on TDS5xxB,6xxA,7xxA*/
 
 	for(f = 0; f < 124; f++)
 	{
-	unsigned char cmdbuf[64] = "WORDCONSTANT:ATOFFSET? 262144,";	
-	unsigned char cmdnr[16];
+        char cmdbuf[64] = "WORDCONSTANT:ATOFFSET? 262144,";	
+	char cmdnr[16];
 	sprintf(cmdnr,"%d",f);
 	strcat(cmdbuf, cmdnr);
 	
@@ -183,10 +182,10 @@ addr = 262144; /* CAL data base address on TDS5xxB,6xxA,7xxA*/
     	   return 1;
     	}
     	
-    caldata = atoi(calbuf);
+     caldata = atoi((char *) calbuf);
     if (debug > 1) printf("CAL DATA: %X\n", caldata);
   
-    unsigned char* abuffer  = (char *)&caldata;
+    unsigned char* abuffer  = (unsigned char *)&caldata;
    	fputc(abuffer[1], outfile);
    	fputc(abuffer[0], outfile);
 	}
@@ -198,8 +197,8 @@ addr = 262144; /* CAL data base address on TDS5xxB,6xxA,7xxA*/
 	
 	for(f = 0; f < 128; f++)
 	{
-	unsigned char cmdbuf[64] = "WORDCONSTANT:ATOFFSET? 262144,";	
-	unsigned char cmdnr[16];
+	char cmdbuf[64] = "WORDCONSTANT:ATOFFSET? 262144,";	
+	char cmdnr[16];
 	sprintf(cmdnr,"%d",f+124);
 	strcat(cmdbuf, cmdnr);
 	
@@ -218,10 +217,10 @@ addr = 262144; /* CAL data base address on TDS5xxB,6xxA,7xxA*/
     	   return 1;
     	}
     	
-    caldata = atoi(calbuf);
+    caldata = atoi((char *) calbuf);
     if (debug > 1) printf("CAL DATA: %X\n", caldata);
   
-    unsigned char* abuffer  = (char *)&caldata;
+    unsigned char* abuffer  = (unsigned char *)&caldata;
    	fputc(abuffer[1], outfile);
    	fputc(abuffer[0], outfile);
 	}
