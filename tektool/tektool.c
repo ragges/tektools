@@ -86,6 +86,8 @@ static void GPIBCleanup(int Dev, char* ErrorMsg)
 
 	}
 
+#if 0
+/* currently not used */
 static int write_command(char *cmd)
 	{
 	ibwrt (Dev, cmd, strlen(cmd));
@@ -93,7 +95,10 @@ static int write_command(char *cmd)
 		return -1;
 	return 0;
 	}
+#endif
 
+#if 0
+/* currently not used */
 static int query(char *query, char *buf, int maxsize)
 	{
 	ibwrt (Dev, query, strlen(query));
@@ -107,6 +112,7 @@ static int query(char *query, char *buf, int maxsize)
 	buf[ibcntl - 1] = '\0';
 	return ibcntl;
 	}
+#endif
 
 struct cmd_hdr
 	{
@@ -152,7 +158,7 @@ static int write_memory(uint32_t addr, uint8_t *buf, int len)
 {
 	struct memory_write_cmd cmd;
 	struct cmd_hdr hdr;
-	uint16_t responselen;
+	/* uint16_t responselen; */
 	char c;
 
 	memset(&cmd, 0, sizeof(cmd));
@@ -468,8 +474,8 @@ out:
 
 static int flash_erase(uint32_t base)
 {
-	uint32_t buf = cpu_to_be32(0xa700a7);
-	int i, ret = -1;
+	/* uint32_t buf = cpu_to_be32(0xa700a7); */
+	int ret = -1;
 
 	if (flash_command(base, 0xa7) == -1)
 		goto out;
@@ -490,8 +496,8 @@ out:
 
 static int flash_program(uint32_t base, uint32_t data)
 {
-	uint32_t buf = cpu_to_be32(0x00400040);
-	int i, ret = -1;
+	/* uint32_t buf = cpu_to_be32(0x00400040); */
+	int ret = -1;
 
 	if (flash_command(base, 0x40) == -1)
 		goto out;
@@ -605,8 +611,7 @@ out:
 
 static int flash_program_page(uint32_t base, uint8_t *data)
 {
-	uint32_t buf;
-	int i, ret = -1;
+	int ret = -1;
 
 	if (debug)
 		fprintf(stderr, "%s\n", __FUNCTION__);
@@ -632,7 +637,7 @@ int main(int argc, char **argv)
 	uint32_t len, addr, base = 0, length = 0;
 	char c;
 	uint8_t buf[1024];
-	int val, optidx;
+	int optidx;
 	FILE *file = NULL;
 	int read_op = 0, write_op = 0, identify_flash_op = 0, erase_flash_op = 0, flash_write_op = 0;
 	int readlen, i;
