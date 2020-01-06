@@ -4,10 +4,16 @@
 *.class
 *.o
 *.so
+getcaldata/getcaldata
+tekfwtool/tekfwtool
+tektool/tektool
 
 # Backup files #
 ################
 *~
+
+# Temporary stuff #
+*.tmp
 
 # OS generated files #
 ######################
@@ -15,3 +21,4 @@
 .DS_Store?
 ._*
 .Spotlight-V100
+*.dSYM
