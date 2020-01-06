@@ -484,7 +484,7 @@ static int flash_identify(uint32_t base)
 
 	ret = 0;
 out:
-	if (flash_command(base, 0x90) == -1)
+	if (flash_command(base, 0xff) == -1) /* set flash in Read Array mode again */
 		return -1;
 	return ret;
 }
