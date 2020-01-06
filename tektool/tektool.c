@@ -26,6 +26,32 @@
 #include <string.h>
 #include <errno.h>
 
+/*
+#define FLASH_28F160S5
+*/
+
+#ifndef FLASH_28F160S5
+/* Intel 28F016SA */
+#define FLASH_NAME "28F016SA"
+#define FLASH_ID_CMD 0x90
+#define FLASH_ID1 0x89008900
+#define FLASH_ID2 0xa066a066
+#define FLASH_ERASE_CMD1 0xa7
+#define FLASH_ERASE_CMD2 0xd0
+#define FLASH_PROGRAM_CMD 0x40
+#else
+/* Intel 28F160S5 */
+/* WARNING - NOT WELL TESTED! */
+#define FLASH_NAME "28F160S5"
+#define FLASH_ID_CMD 0x90
+#define FLASH_ID1 0xb000b000
+#define FLASH_ID2 0xd000d000
+#define FLASH_ERASE_CMD1 0x30
+#define FLASH_ERASE_CMD2 0xd0
+#define FLASH_PROGRAM_CMD 0x40
+#endif
+
+
 /* change to using htonl, htons, ntohl, ntohs instead? */
 #if defined(LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN__)
 #define cpu_to_be16(_x) ((((_x) & 0xff) << 8) | (((_x) >> 8) & 0xff))
@@ -470,20 +496,20 @@ static int flash_identify(uint32_t base)
 	int ret = -1;
 
 	fprintf(stderr, "base: %08x\n", base);
-	if (flash_command(base, 0x90) == -1)
+	if (flash_command(base, FLASH_ID_CMD) == -1)
 		goto out;
 
 	if (read_memory(base, (uint8_t *)&buf, sizeof(buf)) == -1)
 		goto out;
 
 	printf("Flash ID1: 0x%08x\n", buf);
-	if (buf != 0x89008900)
+	if (buf != FLASH_ID1)
 		goto out;
 
 	if (read_memory(base + 4, (uint8_t *)&buf, sizeof(buf)) == -1)
 		return -1;
 	printf("Flash ID2: 0x%08x\n", buf);
-	if (buf != 0xa066a066)
+	if (buf != FLASH_ID2)
 		goto out;
 
 	ret = 0;
@@ -498,10 +524,10 @@ static int flash_erase(uint32_t base)
 	/* uint32_t buf = cpu_to_be32(0xa700a7); */
 	int ret = -1;
 
-	if (flash_command(base, 0xa7) == -1)
+	if (flash_command(base, FLASH_ERASE_CMD1) == -1)
 		goto out;
 
-	if (flash_command(base, 0xd0) == -1)
+	if (flash_command(base, FLASH_ERASE_CMD2) == -1)
 		goto out;
 
 	if (flash_wait_sr(base, 0x0080, 0x0080, 1000) == -1)
@@ -520,7 +546,7 @@ static int flash_program(uint32_t base, uint32_t data)
 	/* uint32_t buf = cpu_to_be32(0x00400040); */
 	int ret = -1;
 
-	if (flash_command(base, 0x40) == -1)
+	if (flash_command(base, FLASH_PROGRAM_CMD) == -1)
 		goto out;
 
 	if (write_memory(base, (uint8_t *)&data, sizeof(data)) == -1)
@@ -758,7 +784,7 @@ int main(int argc, char **argv)
 	Dev = ibdev(0, 29, 0, T3s, 1, 0);
 	if (ibsta & ERR)
 	{
-		printf("Unable to open device\nibsta = 0x%x iberr = %d\n",
+		fprintf(stderr, "Unable to open device\nibsta = 0x%x iberr = %d\n",
 		       ibsta, iberr);
 		return 1;
 	}
@@ -797,6 +823,7 @@ int main(int argc, char **argv)
 			fprintf(stderr, "identify failed\n");
 			return -1;
 		}
+		printf("Flash identified as: %s\n", FLASH_NAME);
 		return 0;
 	}
 
