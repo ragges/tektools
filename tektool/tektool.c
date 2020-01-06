@@ -18,12 +18,13 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <stdint.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
 #include <time.h>
+#include <string.h>
+#include <errno.h>
 
 /* change to using htonl, htons, ntohl, ntohs instead? */
 #if defined(LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN__)
@@ -43,14 +44,20 @@
 
 #define MIN(_a, _b) ((_a) > (_b) ? (_b) : (_a))
 
-#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+#if defined(__MSDOS__) || defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+  #include <malloc.h> /* can this be removed? */
   #include <windows.h>
   #include "ni488.h"
-#else
-  #include <unistd.h>
-  #include <string.h>
-  #include <errno.h>
+#elif defined(__linux__)
+  /* linux with linux-gpib */
+//  #include <unistd.h>
   #include <gpib/ib.h>
+#elif defined(__APPLE__)
+  /* MacOS with NI GPIB drivers */
+//  #include <unistd.h>
+  #include <ni4882.h>
+#else
+        #error "Unknown compiler environment!"
 #endif
 
 int  Dev;
