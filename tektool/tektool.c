@@ -214,7 +214,9 @@ static int write_memory(uint32_t addr, uint8_t *buf, int len)
 
 static int read_memory(uint32_t addr, uint8_t *buf, int len)
 {
-
+#if 0
+/* Only needed in normal running mode, not needed when running in bootloader mode 
+   (with scope booted with NVRAM Protection rocker switch in Unprotected position) */
 /* send first TEKTRONIX Password fr TDS5xxB/7xxA models to allow memory dump */
   //ibwrt (Dev, "PASSWORD PITBULL", 17L);
 	ibwrt (Dev, "PASSWORD PITBULL", 16L);
@@ -223,6 +225,7 @@ static int read_memory(uint32_t addr, uint8_t *buf, int len)
 		fprintf(stderr, "%s: writing command failed\n", __func__);
 		return -1;
 	}
+#endif
 	struct memory_read_cmd cmd;
 	struct cmd_hdr hdr;
 	int responselen;
