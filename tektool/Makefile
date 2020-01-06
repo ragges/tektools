@@ -11,12 +11,6 @@ else
 # Darwin with NI 488.2 driver
 		CFLAGS += -g -fsigned-char /Library/Frameworks/NI4882.framework/Resources/ni4882.o -framework CoreFoundation -I/Library/Frameworks/NI4882.framework/Headers
 	endif
-
-	ifeq ($(OS_NAME), Darwin)
-# TEST!
-		CFLAGS = -g -fsigned-char -framework CoreFoundation -I/Users/ragge/src/ni4882.h-dummy /Users/ragge/src/ni4882.h-dummy/gpib-dummy.o
-	endif
-
 endif
 
 
