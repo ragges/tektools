@@ -1,30 +1,36 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <stdint.h>
 #include <fcntl.h>
 #include <getopt.h>
 #include <signal.h>
 #include <time.h>
+#include <string.h>
+#include <errno.h>
 
 #if defined(__MSDOS__)
+	#include <malloc.h> /* can this be removed? */
 	#include "dosdefs.h"
 	#include "tfdos.h"	//simply tekfwtool.h renamed to 8.3-safe name
 	#include "tgtdummy.h"
-#elif defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
-	#include "tekfwtool.h"
+#else
 	#include "target-procs.h"
+	#include "tekfwtool.h"
+#endif
+
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+	#include <malloc.h> /* can this be removed? */
 	#include <windows.h>
 	#include "ni488.h"
-#elif defined(__linux__) || defined(__APPLE__)
-	#include <string.h>
-	#include <errno.h>
+#elif defined(__linux__)
+	/* linux with linux-gpib */
 	#include <gpib/ib.h>
-	#include "tekfwtool.h"
-	#include "target-procs.h"
+#elif defined(__APPLE__)
+	/* MacOS with NI GPIB drivers */
+	#include <ni4882.h>
 #else
-        #error "Unknown compiler"
+        #error "Unknown compiler environment!"
 #endif
 
 
