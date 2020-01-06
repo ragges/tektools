@@ -45,8 +45,11 @@ const char *ErrorMnemonic[] = {"EDVR", "ECIC", "ENOL", "EADR", "EARG",
 static int abort_requested = 0;
 static int debug;
 
+#define UNUSED(x) (void)(x)
+
 static void sigint_handler(int arg)
 {
+	UNUSED(arg);
 	abort_requested = 1;
 }
 
@@ -127,29 +130,29 @@ static int write_memory(uint32_t addr, uint8_t *buf, int len)
 
 	ibwrt (Dev, &cmd, len + 12);
 	if (ibsta & ERR) {
-		fprintf(stderr, "%s: writing command failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: writing command failed\n", __func__);
 		return -1;
 	}
 
 	ibrd(Dev, &c, 1);
 	if (ibcntl != 1 || c != '+') {
-		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: response reading failed\n", __func__);
 		return -1;
 	}
 
 	ibrd(Dev, &hdr, sizeof(struct cmd_hdr));
 	if (ibsta & ERR) {
-		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: response reading failed\n", __func__);
 		return -1;
 	}
 
 	if (ibcntl < (signed)sizeof(hdr)) {
-		fprintf(stderr, "%s: short header\n", __FUNCTION__);
+		fprintf(stderr, "%s: short header\n", __func__);
 		return -1;
 	}
 
 	if (hdr.cmd != '=') {
-		fprintf(stderr, "%s: invalid response: %c\n", __FUNCTION__, hdr.cmd);
+		fprintf(stderr, "%s: invalid response: %c\n", __func__, hdr.cmd);
 		return -1;
 	}
 	c = '+';
@@ -179,24 +182,24 @@ static int branch_cmd(uint32_t addr, uint32_t arg0, uint8_t *data, int *datalen)
 
 	ibwrt (Dev, &cmd, 20 + *datalen);
 	if (ibsta & ERR) {
-		fprintf(stderr, "%s: writing command failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: writing command failed\n", __func__);
 		return -1;
 	}
 
 	ibrd(Dev, &c, 1);
 	if (ibcntl != 1 || c != '+') {
-		fprintf(stderr, "%s: response reading failed: ibcntl: %ld, %02x\n", __FUNCTION__, ibcntl, c);
+		fprintf(stderr, "%s: response reading failed: ibcntl: %ld, %02x\n", __func__, ibcntl, c);
 		return -1;
 	}
 
 	ibrd(Dev, &hdr, sizeof(struct cmd_hdr));
 	if (ibsta & ERR) {
-		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: response reading failed\n", __func__);
 		return -1;
 	}
 
 	if (ibcntl < (signed)sizeof(hdr)) {
-		fprintf(stderr, "%s: short header\n", __FUNCTION__);
+		fprintf(stderr, "%s: short header\n", __func__);
 		return -1;
 	}
 
@@ -207,7 +210,7 @@ static int branch_cmd(uint32_t addr, uint32_t arg0, uint8_t *data, int *datalen)
 		printf("reading %u bytes\n", be16_to_cpu(hdr.len));
 		ibrd(Dev, buf, be16_to_cpu(hdr.len));
 		if (ibsta & ERR) {
-			fprintf(stderr, "%s: reading of additional data failed\n", __FUNCTION__);
+			fprintf(stderr, "%s: reading of additional data failed\n", __func__);
 			return -1;
 		}
 	}
@@ -216,7 +219,7 @@ static int branch_cmd(uint32_t addr, uint32_t arg0, uint8_t *data, int *datalen)
 		hexdump(buf, be16_to_cpu(hdr.len));
 
 	if (hdr.cmd != 'P') {
-		fprintf(stderr, "%s: invalid response: %c\n", __FUNCTION__, hdr.cmd);
+		fprintf(stderr, "%s: invalid response: %c\n", __func__, hdr.cmd);
 		return -1;
 	}
 	c = '+';
@@ -243,18 +246,18 @@ static int read_memory(uint32_t addr, uint8_t *buf, int len)
 
 	ibwrt (Dev, &cmd, sizeof(struct memory_read_cmd));
 	if (ibsta & ERR) {
-		fprintf(stderr, "%s: writing command failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: writing command failed\n", __func__);
 		return -1;
 	}
 
 	ibrd(Dev, &c, 1);
 	if (ibcntl != 1 || c != '+') {
-		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: response reading failed\n", __func__);
 		return -1;
 	}
 	ibrd(Dev, &hdr, sizeof(struct cmd_hdr));
 	if (ibsta & ERR) {
-		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: response reading failed\n", __func__);
 		return -1;
 	}
 
@@ -263,12 +266,12 @@ static int read_memory(uint32_t addr, uint8_t *buf, int len)
 	}
 
 	if (ibcntl < (signed)sizeof(hdr)) {
-		fprintf(stderr, "%s: short header (ibcntl=%ld)\n", __FUNCTION__, ibcntl);
+		fprintf(stderr, "%s: short header (ibcntl=%ld)\n", __func__, ibcntl);
 		return -1;
 	}
 
 	if (hdr.cmd != '=') {
-		fprintf(stderr, "%s: invalid response: %c\n", __FUNCTION__, hdr.cmd);
+		fprintf(stderr, "%s: invalid response: %c\n", __func__, hdr.cmd);
 		return -1;
 	}
 
@@ -276,19 +279,19 @@ static int read_memory(uint32_t addr, uint8_t *buf, int len)
 
 	if (responselen != len) {
 		fprintf(stderr, "%s: short response (%d < %u)\n",
-				__FUNCTION__, responselen, len);
+				__func__, responselen, len);
 		return -1;
 	}
 	ibrd(Dev, buf, responselen);
 	if (ibsta & ERR || ibcntl < len) {
-		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: response reading failed\n", __func__);
 		return -1;
 	}
 
 	c = '+';
 	ibwrt(Dev, &c, 1);
 	if (ibsta & ERR) {
-		fprintf(stderr, "%s: unable to send ACK\n", __FUNCTION__);
+		fprintf(stderr, "%s: unable to send ACK\n", __func__);
 		return -1;
 	}
 
@@ -505,7 +508,7 @@ int main(int argc, char **argv)
 	}
 
 	if (!length) {
-		fprintf(stderr, "%s: length required\n", __FUNCTION__);
+		fprintf(stderr, "%s: length required\n", __func__);
 		goto bad_exit;
 	}
 
