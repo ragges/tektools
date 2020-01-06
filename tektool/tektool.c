@@ -70,8 +70,11 @@ const char *ErrorMnemonic[] = {"EDVR", "ECIC", "ENOL", "EADR", "EARG",
 static int abort_requested = 0;
 static int debug;
 
+#define UNUSED(x) (void)(x)
+
 static void sigint_handler(int arg)
 	{
+	UNUSED(arg);
 	abort_requested = 1;
 	}
 
@@ -175,7 +178,7 @@ static int write_memory(uint32_t addr, uint8_t *buf, int len)
 
 	ibwrt (Dev, &cmd, len + 12);
 	if (ibsta & ERR) {
-		fprintf(stderr, "%s: writing command failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: writing command failed\n", __func__);
 		return -1;
 	}
 
@@ -183,25 +186,25 @@ static int write_memory(uint32_t addr, uint8_t *buf, int len)
 	if (ibcntl != 1 || c != '+')
 
 	{
-	fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+	fprintf(stderr, "%s: response reading failed\n", __func__);
 	return -1;
 	}	
 
 	ibrd(Dev, &hdr, sizeof(struct cmd_hdr));
 	if (ibsta & ERR)
 	{	
-		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: response reading failed\n", __func__);
 		return -1;
 	}
 
 	if (ibcntl < (signed)sizeof(hdr))
 	{
-		fprintf(stderr, "%s: short header\n", __FUNCTION__);
+		fprintf(stderr, "%s: short header\n", __func__);
 		return -1;
 	}
 
 	if (hdr.cmd != '=') {
-		fprintf(stderr, "%s: invalid response: %c\n", __FUNCTION__, hdr.cmd);
+		fprintf(stderr, "%s: invalid response: %c\n", __func__, hdr.cmd);
 		return -1;
 	}
 	c = '+';
@@ -217,7 +220,7 @@ static int read_memory(uint32_t addr, uint8_t *buf, int len)
 	ibwrt (Dev, "PASSWORD PITBULL", 16L);
 	if (ibsta & ERR)
 	{
-		fprintf(stderr, "%s: writing command failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: writing command failed\n", __func__);
 		return -1;
 	}
 	struct memory_read_cmd cmd;
@@ -238,33 +241,33 @@ static int read_memory(uint32_t addr, uint8_t *buf, int len)
 	ibwrt (Dev, &cmd, sizeof(struct memory_read_cmd));
 	if (ibsta & ERR)
 	{
-		fprintf(stderr, "%s: writing command failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: writing command failed\n", __func__);
 		return -1;
 	}
 
 	ibrd(Dev, &c, 1);
 	if (ibcntl != 1 || c != '+')
 	{
-		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: response reading failed\n", __func__);
 		return -1;
 	}
 	
 	ibrd(Dev, &hdr, sizeof(struct cmd_hdr));
 	if (ibsta & ERR)
 	{
-		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: response reading failed\n", __func__);
 		return -1;
 	}
 
 	if (ibcntl < (signed)sizeof(hdr))
 	{
-		fprintf(stderr, "%s: short header\n", __FUNCTION__);
+		fprintf(stderr, "%s: short header\n", __func__);
 		return -1;
 	}
 
 	if (hdr.cmd != '=')
 	{
-		fprintf(stderr, "%s: invalid response: %c\n", __FUNCTION__, hdr.cmd);
+		fprintf(stderr, "%s: invalid response: %c\n", __func__, hdr.cmd);
 		return -1;
 	}
 
@@ -272,14 +275,14 @@ static int read_memory(uint32_t addr, uint8_t *buf, int len)
 
 	if (responselen != len)
 	{
-		fprintf(stderr, "%s: short response\n", __FUNCTION__);
+		fprintf(stderr, "%s: short response\n", __func__);
 		return -1;
 	}
 
 	ibrd(Dev, buf, responselen);
 	if (ibsta & ERR || ibcntl < len)
 	{
-		fprintf(stderr, "%s: response reading failed\n", __FUNCTION__);
+		fprintf(stderr, "%s: response reading failed\n", __func__);
 		return -1;
 	}
 
@@ -287,7 +290,7 @@ static int read_memory(uint32_t addr, uint8_t *buf, int len)
 	ibwrt(Dev, &c, 1);
 	if (ibsta & ERR)
 	{
-		fprintf(stderr, "%s: unable to send ACK\n", __FUNCTION__);
+		fprintf(stderr, "%s: unable to send ACK\n", __func__);
 		return -1;
 	}
 
@@ -365,6 +368,17 @@ static int flash_command(uint32_t base, uint8_t cmd)
 	return 0;
 }
 
+static void my_usleep(uint32_t us) {
+	int ret = -1;
+	struct timespec rqt, rmt;
+	rqt.tv_sec = us / 1000000;
+	rqt.tv_nsec = 1000 * (us % 1000000);
+	while (ret && !abort_requested) {
+		ret = nanosleep(&rqt, &rmt);
+		rqt = rmt;
+	}
+}
+
 static int flash_wait_sr(uint32_t base, uint16_t mask, uint16_t result, int tries)
 	{
 	uint32_t buf;
@@ -380,7 +394,7 @@ static int flash_wait_sr(uint32_t base, uint16_t mask, uint16_t result, int trie
 		fprintf(stderr, "SR: 0x%08x\n", be32_to_cpu(buf));
 		if ((be32_to_cpu(buf) & _mask) == _result)
 			break;
-		usleep(200000);
+		my_usleep(200000);
 	}
 
 	if (!tries || abort_requested)
@@ -407,7 +421,7 @@ static int flash_wait_gsr(uint32_t base, uint16_t mask, uint16_t result, int tri
 //		fprintf(stderr, "GSR 0x%08x: 0x%08x\n", base, be32_to_cpu(buf));
 		if ((be32_to_cpu(buf) & _mask) == _result)
 			break;
-		usleep(20000);
+		my_usleep(20000);
 	}
 
 	if (!tries || abort_requested)
@@ -433,7 +447,7 @@ static int flash_wait_bsr(uint32_t base, uint16_t mask, uint16_t result, int tri
 //		fprintf(stderr, "BSR 0x%08x: 0x%08x (%08x/%08x)\n", base, be32_to_cpu(buf), _mask, _result);
 		if ((be32_to_cpu(buf) & _mask) == _result)
 			break;
-		usleep(20000);
+		my_usleep(20000);
 	}
 
 	if (!tries || abort_requested)
@@ -520,7 +534,7 @@ static int flash_load_to_pagebuffer(uint32_t base, uint8_t *data)
 	uint32_t buf;
 	int ret = -1;
 
-//	fprintf(stderr, "%s: %08x\n", __FUNCTION__, base);
+//	fprintf(stderr, "%s: %08x\n", __func__, base);
 
 	if (flash_command(base, 0x71) == -1)
 		goto out;
@@ -560,9 +574,9 @@ static int flash_write_pagebuffer(uint32_t base, uint32_t start)
 {
 	int ret = -1;
 	uint32_t buf;
+	UNUSED(start);
 
-
-//	fprintf(stderr, "%s: %08x\n", __FUNCTION__, base);
+//	fprintf(stderr, "%s: %08x\n", __func__, base);
 
 	if (flash_command(base, 0x71) == -1)
 		goto out;
@@ -614,7 +628,7 @@ static int flash_program_page(uint32_t base, uint8_t *data)
 	int ret = -1;
 
 	if (debug)
-		fprintf(stderr, "%s\n", __FUNCTION__);
+		fprintf(stderr, "%s\n", __func__);
 
 	if (flash_load_to_pagebuffer(base, data) == -1)
 		goto out;
@@ -726,7 +740,7 @@ int main(int argc, char **argv)
 
 	if (!length)
 	{
-		fprintf(stderr, "%s: length required\n", __FUNCTION__);
+		fprintf(stderr, "%s: length required\n", __func__);
 		return 1;
 	}
 
