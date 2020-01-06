@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
   #include <conio.h>
@@ -19,15 +20,24 @@
 
   /* for Agilent adapters uncomment following line */
   #include "ni488.h"
-#else
-  #include <unistd.h>
-  #include <string.h>
-  #include <errno.h>
+#elif defined(__linux__)
+  /* linux with linux-gpib */
+//  #include <unistd.h>
   #include <gpib/ib.h>
   #ifndef _cdecl
     #define _cdecl
   #endif
+#elif defined(__APPLE__)
+  /* MacOS with NI GPIB drivers */
+//  #include <unistd.h>
+  #include <ni4882.h>
+  #ifndef _cdecl
+    #define _cdecl
+  #endif
+#else
+        #error "Unknown compiler environment!"
 #endif
+
 
 #define ARRAYSIZE 100            // Size of read buffer
 
