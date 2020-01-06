@@ -22,14 +22,12 @@
   #include "ni488.h"
 #elif defined(__linux__)
   /* linux with linux-gpib */
-//  #include <unistd.h>
   #include <gpib/ib.h>
   #ifndef _cdecl
     #define _cdecl
   #endif
 #elif defined(__APPLE__)
   /* MacOS with NI GPIB drivers */
-//  #include <unistd.h>
   #include <ni4882.h>
   #ifndef _cdecl
     #define _cdecl
@@ -79,10 +77,11 @@ int _cdecl main(void)  {
 
 FILE *outfile;
 int f;
+#if 0
 unsigned long addr;
-
 // addr = 0x00040000L; /* CAL data base address on TDS5xxB,6xxA,7xxA*/
 addr = 262144; /* CAL data base address on TDS5xxB,6xxA,7xxA*/
+#endif
 
 
     Dev = ibdev (BDINDEX, PRIMARY_ADDR_OF_DMM, NO_SECONDARY_ADDR,
