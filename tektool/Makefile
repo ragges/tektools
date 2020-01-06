@@ -21,10 +21,10 @@ endif
 
 
 
-tekfwtool : target-procs.h tekfwtool.c tekfwtool.h
-	$(CC) $(CFLAGS) tekfwtool.c -o tekfwtool
+tektool : tektool.c
+#	gcc $(CFLAGS) tektool.c -o tektool
 
 .PHONY : clean
 clean :
-	-rm -fv tekfwtool
-	-rm -rfv tekfwtool.dSYM
+	-rm -fv tektool
+	-rm -rfv tektool.dSYM
