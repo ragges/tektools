@@ -52,6 +52,17 @@
 #endif
 
 
+#if !defined (PROG_NAME)
+  #define PROG_NAME __FILE__
+#endif
+#if !defined (GIT_VERSION)
+  #define GIT_VERSION "unknown"
+#endif
+#if !defined (BUILD_TIME)
+  #define BUILD_TIME __DATE__ " " __TIME__
+#endif
+
+
 /* change to using htonl, htons, ntohl, ntohs instead? */
 #if defined(LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN) || defined(__LITTLE_ENDIAN__)
 #define cpu_to_be16(_x) ((((_x) & 0xff) << 8) | (((_x) >> 8) & 0xff))
@@ -340,9 +351,16 @@ static struct option long_options[] =
 	{ NULL, 0, 0, 0 }
 };
 
+static char* ident = PROG_NAME "   Version: " GIT_VERSION "   Build time: " BUILD_TIME;
+static void print_version(void)
+{
+	fprintf(stderr, "# %s\n", ident);
+}
+
 static void usage(void)
 {
-	fprintf(stderr, "usage:\n"
+	print_version(); /* XXX should have it's own flag */
+	fprintf(stderr, "\nusage:\n"
 		"--read         -r <filename>  read from memory to file\n"
 		"--write        -w <filename>  read from file to memory\n"
 		"--base         -b <base>      base address for read/write/program\n"

@@ -1,4 +1,5 @@
 
+# identify platform
 ifeq ($(OS),Windows_NT)
 	OS_NAME := windows_nt
 else
@@ -14,9 +15,22 @@ else
 endif
 
 
+# get version and build time strings
+GIT_VERSION := "$(shell git describe --abbrev=7 --dirty --always --tags)"
+ifneq ($(GIT_VERSION), "")
+	CFLAGS += -DGIT_VERSION=\"$(GIT_VERSION)\"
+endif
+BUILD_TIME := "$(shell date -u "+%Y-%m-%d %H:%M:%S")"
+ifneq ($(BUILD_TIME), "")
+	CFLAGS += -DBUILD_TIME=\"$(BUILD_TIME)\"
+endif
+
+
+CFLAGS += -DPROG_NAME=\"$@\"
+
 
 tektool : tektool.c
-#	gcc $(CFLAGS) tektool.c -o tektool
+	$(CC) $(CFLAGS) tektool.c -o tektool
 
 .PHONY : clean
 clean :

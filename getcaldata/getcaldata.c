@@ -31,6 +31,18 @@
 #endif
 
 
+#if !defined (PROG_NAME)
+  #define PROG_NAME __FILE__
+#endif
+#if !defined (GIT_VERSION)
+  #define GIT_VERSION "unknown"
+#endif
+#if !defined (BUILD_TIME)
+  #define BUILD_TIME __DATE__ " " __TIME__
+#endif
+
+
+
 #define ARRAYSIZE 100            // Size of read buffer
 
 int  Dev;                        // Device handle
@@ -45,8 +57,14 @@ void GPIBCleanup(int Dev, char* ErrorMsg);
 static int debug;
 
 
-int main(void)  {
+static char* ident = PROG_NAME "   Version: " GIT_VERSION "   Build time: " BUILD_TIME;
+static void print_version(void)
+{
+	fprintf(stderr, "# %s\n", ident);
+}
 
+
+int main(void)  {
 /*
  * ========================================================================
  *
@@ -77,6 +95,7 @@ unsigned long addr;
 addr = 262144; /* CAL data base address on TDS5xxB,6xxA,7xxA*/
 #endif
 
+    print_version();
 
     Dev = ibdev (BDINDEX, PRIMARY_ADDR_OF_DMM, NO_SECONDARY_ADDR,
                 TIMEOUT, EOTMODE, EOSMODE);
