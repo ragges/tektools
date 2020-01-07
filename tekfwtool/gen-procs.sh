@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
 echo "#ifndef __TARGET_PROCS_H"
 echo -e "#define __TARGET_PROCS_H\n"
 
-m68k-elf-nm target.elf|while read addr type name
+m68k-linux-gnu-nm target.elf|while read addr type name
 do
 #echo "[$name]"
 if [ $type == "t" -a $name != "gcc2_compiled." ]; then

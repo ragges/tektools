@@ -83,7 +83,7 @@ static int flash_wait_sr(uint32_t *base, uint16_t mask, uint16_t result, int tri
 	}
 
 	if (!tries) {
-		console_log("flash_wait_gsr timeout\n");
+		console_log("flash_wait_sr timeout\n");
 		return -1;
 	}
 	ret = 0;
@@ -102,11 +102,11 @@ static int flash_wait_gsr(uint32_t *base, uint16_t mask, uint16_t result, int tr
 	base += 2;
 
 	while(tries--) {
-		console_log("flash_wait_gsr: %08x: %08x\n", base, *(uint32_t *)base);
+		//console_log("flash_wait_gsr: %08x: %08x\n", base, *(uint32_t *)base);
 		if ((*base & _mask) == _result)
 			break;
 
-		udelay(10);
+		udelay(10000);
 	}
 
 	if (!tries) {
@@ -129,10 +129,10 @@ static int flash_wait_bsr(uint32_t *base, uint16_t mask, uint16_t result, int tr
 	base += 1;
 
 	while(tries--) {
-		console_log("flash_wait_bsr: %08x: %08x (mask %08x/%08x\n", base, *base, _mask, _result);
+		//console_log("flash_wait_bsr: %08x: %08x (mask %08x/%08x\n", base, *base, _mask, _result);
 		if ((*base & _mask) == _result)
 			break;
-		udelay(10);
+		udelay(10000);
 	}
 
 	if (!tries)
@@ -145,11 +145,15 @@ out:
 
 static int flash_erase_intel_s5(uint32_t *base)
 {
-	*base = 0x30303030;
-	*base = 0xd0d0d0d0;
+	*base = 0x30303030; /* erase all unlocked blocks */
+	*base = 0xd0d0d0d0; /* confirm erase */
+
+	*base = 0x70707070; /* read status register */
 
 	if (flash_wait_sr(base, 0x0080, 0x0080, 0x100000) == -1)
 		return -1;
+
+	*base = 0x50505050; /* clear status register */
 
 	*base = 0xffffffff;
 	return 0;
@@ -157,10 +161,12 @@ static int flash_erase_intel_s5(uint32_t *base)
 
 static int flash_erase_intel_sa(uint32_t *base)
 {
-	*base = 0xa7a7a7a7;
-	*base = 0xd0d0d0d0;
+	*base = 0xa7a7a7a7; /* erase all unlocked blocks */
+	*base = 0xd0d0d0d0; /* confirm erase */
 
-	if (flash_wait_gsr(base, 0x0080, 0x0080, 0x100000) == -1)
+	*base = 0x71717171; /* read extended status register */
+
+	if (flash_wait_gsr(base, 0x00a0, 0x0080, 0x100000) == -1)
 		return -1;
 
 	*base = 0xffffffff;

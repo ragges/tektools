@@ -6,6 +6,7 @@
 *.so
 getcaldata/getcaldata
 tekfwtool/tekfwtool
+tekfwtool/target.elf
 tektool/tektool
 
 # Backup files #

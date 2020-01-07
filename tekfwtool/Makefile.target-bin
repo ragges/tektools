@@ -18,14 +18,16 @@ endif
 M68KCCFLAGS += $(CFLAGS)
 
 
+all: target.bin target-procs.h
+
 target.bin:	target.elf
 		$(M68KOBJCOPY) -O binary $< $@
 
-target.elf:	target.o target.ld
-		$(M68KCC) -nostdlib -Wl,-T target.ld -o $@ target.o
-
 target-procs.h:	target.elf gen-procs.sh
 		./gen-procs.sh >$@
+
+target.elf:	target.o target.ld
+		$(M68KCC) -nostdlib -Wl,-T target.ld -o $@ target.o
 
 target.o:	target.c
 		$(M68KCC) $(M68KCCFLAGS) -c -o $@ $<
