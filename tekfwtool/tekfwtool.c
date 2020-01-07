@@ -201,7 +201,7 @@ static int branch_cmd(uint32_t addr, uint32_t arg0, uint8_t *data, int *datalen)
 
 	ibrd(Dev, &c, 1);
 	if (ibcntl != 1 || c != '+') {
-		fprintf(stderr, "%s: response reading failed: ibcntl: %ld, %02x\n", __func__, ibcntl, c);
+	  fprintf(stderr, "%s: response reading failed: ibcntl: %u, %02x\n", __func__, (unsigned int) ibcntl, c);
 		return -1;
 	}
 
@@ -279,7 +279,7 @@ static int read_memory(uint32_t addr, uint8_t *buf, int len)
 	}
 
 	if (ibcntl < (signed)sizeof(hdr)) {
-		fprintf(stderr, "%s: short header (ibcntl=%ld)\n", __func__, ibcntl);
+	  fprintf(stderr, "%s: short header (ibcntl=%u)\n", __func__, (unsigned int) ibcntl);
 		return -1;
 	}
 
