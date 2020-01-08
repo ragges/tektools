@@ -122,7 +122,7 @@ Just run it and it will dump the EEPROMs.
 You may want to double check that the addresses and sizes of the
 NVRAMs are correct for your model.
 
-### tdsNvramFloppyTool
+### tdsNvramFloppyTool and TDSNvrCV_2_0
 
 tdsNvramFloppyTool is a set of scripts that are to be put on a floppy
 disk that will let the scope itself read or write NVRAM and EEPROM
