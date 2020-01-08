@@ -3,27 +3,41 @@
 These are tools for backing up and restoring NVRAM, Flash and EEPROMs
 in certain Tektronix oscilloscopes such as the TDS 5xx/6xx/7xx series,
 with minor modifications so that they can be used with Linux, and
-optionally ARM CPUs e.g. a Raspberry Pi.
+optionally ARM CPUs e.g. a Raspberry Pi, and MacOS with NI drivers.
 
 (What is special with ARM is that C compilers for efficiency often
 defaults to char being unsigned, which some programs do not expect.)
 
+### Changelog
+
+Release notes / change history is in [CHANGELOG.md](CHANGELOG.md)
+
 ### Prerequisites
 
 You need:
-* A Linux system
-* linux-gpib - [https://linux-gpib.sourceforge.io](https://linux-gpib.sourceforge.io)
-* A GPIB adapter
+* Linux based:
+  * A Linux system
+  * linux-gpib - [https://linux-gpib.sourceforge.io](https://linux-gpib.sourceforge.io)
+  * A GPIB adapter
+* MacOS based:
+  * A MacOS system
+  * National Instruments 488.2 drivers
+  * A National Instruments GPIB adapter
 
 The programs have been tested for reading (making backups) with this setup:
-* Raspberry Pi (3B+)
-* Raspbian (version 9.11)
-* linux-gpib (version 4.3.0)
-* USB to GPIB adapter, Agilent 82357B (from Ebay)
+* Linux based:
+  * Raspberry Pi (3B+)
+  * Raspbian (version 9.11)
+  * linux-gpib (version 4.3.0)
+  * USB to GPIB adapter, Agilent 82357B (from Ebay)
+* MacOS based: 
+  * Mac
+  * National Instruments 488.2 drivers
+  * USB to GPIB adapter, National Instruments
 
-These programs will likely work with just minor modifications on
-e.g. MacOS with macosx_gpib_lib, or any other POSIX compliant systems
-with an NI-488.2 compliant GPIB API, but this has not been tested.
+These programs will likely work with just minor modifications on many
+other POSIX compliant systems with an NI-488.2 compliant GPIB API, but
+this has not been tested.
 
 #### linux-gpib
 
@@ -50,8 +64,9 @@ TEKTRONIX,TDS 694C,0,CF:91.1CT FV:v6.4e
 
 ### Installing
 
-To compile the programs, go to the tektools directory and run `make`:
+To get and compile the programs, clone the git repository, go to the tektools directory and run `make`:
 ```
+git clone https://github.com/ragges/tektools.git
 cd tektools
 make
 ```
@@ -64,14 +79,15 @@ These programs read and write the NVRAMs containing user settings,
 stored waveforms, and on older instruments calibration data, and the
 flash that contains the firmware.
 
-tekfwtool can download a piece of 68k code to be able to work with
-certain flash chips, tektool does not.
+tekfwtool downloads a piece of 68k code to be able to write firmware
+to the flash faster, tektool does not.
 
 The scope must be started with the NVRAM protection switch set to
 unprotected mode (the rocker switch behind the small holes on the
-right side of the scope). The scope appears almost dead, it does not
-show anything on the screen and all LEDs on the front stays lit, but it
-actually responds on GPIB, typically on address 29.
+right side of the scope). The scope starts in bootloader mode and
+appears almost dead, it does not show anything on the screen and all
+LEDs on the front stays lit, but it responds on GPIB, typically on
+address 29.
 
 tekfwtool looks for the 68k code in the file "target.bin" in the
 current directory. It must either be run when standing in the
@@ -81,8 +97,8 @@ link to it, in the current working directory.
 You could for example dump NVRAM and firmware from the scope using:
 ```
 # NOTE - Addresses and lengths may have to be adjusted depending
-# on model (but probably not)!
-./tektool -r NVRAM_all.bin -b 0x04000000 -l 0xa0000
+# on model
+./tektool -r NVRAM_all.bin -b 0x04000000 -l 0x100000
 ./tektool -r firmware.bin -b 0x01000000 -l 0x400000
 ```
 
@@ -108,15 +124,17 @@ NVRAMs are correct for your model.
 
 ### tdsNvramFloppyTool
 
-tdsNvramFloppyTool is a set of scripts to let the scope itself read or
-write NVRAM and EEPROM data to/from floppy disks - no GPIB is needed.
+tdsNvramFloppyTool is a set of scripts that are to be put on a floppy
+disk that will let the scope itself read or write NVRAM and EEPROM
+data to/from the floppy disks - no GPIB is needed.
 
-There is nothing Linux specific about it, but there is an extra
-version supplied, tdsNvramEepromFloppyDumper, that dumps both the
-NVRAM and the EEPROMs to the floppy in one sweep.
+A **tool for checksumming NVRAM dumps**, written in Java, is also included.
 
-Addresses and sizes may have to be adjusted depending on model (but
-probably not).
+There is nothing Linux specific about it, but it is a very nice tool,
+and here is an extra version supplied, tdsNvramEepromFloppyDumper,
+that dumps both the NVRAM and the EEPROMs to the floppy in one sweep.
+
+Addresses and sizes may have to be adjusted depending on model.
 
 To use them, format a floppy (preferably in the scope), copy the
 file(s) to the floppy, and boot the scope with the floppy inserted.
@@ -131,7 +149,8 @@ You can use tektool, tekfwtool and getcaldata to get the data using
 GPIB, and tdsNvramFloppyTool to get it using a floppy, and compare the
 results to check that you have likely got correct and error free
 data. Note that the first two bytes of the NVRAM changes between
-almost every read, and much of it as soon as the scope is being used.
+almost every read, and much more of it as soon as the scope is being
+used.
 
 If you use the floppy method first, and then immediately flip the
 NVRAM protection switch and reboot it for GPIB dumping using
@@ -158,5 +177,6 @@ with it.
 
 ## Acknowledgments
 
-* All the helpful people in the community that has made this possible.
+* All the helpful people in the community that has made this possible
 * flyte at eevblog.com forum
+* Dr. Alberg Roserio at Tantratron
