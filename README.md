@@ -1,4 +1,4 @@
-# Tektronix TDS 5xx/6xx/7xx/8xx tools on Linux, ARM
+# Tektronix TDS 5xx/6xx/7xx/8xx tools on Linux, ARM, and MacOS
 
 These are tools for backing up and restoring NVRAM, Flash and EEPROMs
 in certain Tektronix oscilloscopes such as the TDS 5xx/6xx/7xx series,
