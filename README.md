@@ -124,20 +124,25 @@ NVRAMs are correct for your model.
 
 ### tdsNvramFloppyTool and TDSNvrCV_2_0
 
-tdsNvramFloppyTool is a set of scripts that are to be put on a floppy
+**tdsNvramFloppyTool** is a set of scripts that are to be put on a floppy
 disk that will let the scope itself read or write NVRAM and EEPROM
 data to/from the floppy disks - no GPIB is needed.
 
-A **tool for checksumming NVRAM and EEPROM dumps**, written in Java, is also included.
+**TDSNvrCV_2_0** is a tool for checksumming NVRAM and EEPROM dumps,
+written in Java.
 
-There is nothing Linux specific about it, but it is a very nice tool,
-and here is an extra version supplied, tdsNvramEepromFloppyDumper,
-that dumps both the NVRAM and the EEPROMs to the floppy in one sweep.
+There is nothing Linux specific about these, but they are very nice
+tools, so they are included in this kit anyway.
+
+In this kit there is also an extra version,
+tdsNvramEepromFloppyDumper, that dumps both the NVRAM and the EEPROMs
+to the floppy in one sweep.
 
 Addresses and sizes may have to be adjusted depending on model.
 
-To use them, format a floppy (preferably in the scope), copy the
-file(s) to the floppy, and boot the scope with the floppy inserted.
+To use the tdsNvramFloppyTool, format a floppy (preferably in the
+scope), copy the file(s) that do what you want to the floppy, and boot
+the scope with the floppy inserted.
 
 For more information about using these scripts and the checksumming
 tool, see the
@@ -154,8 +159,8 @@ data. Note that the first two bytes of the NVRAM changes between
 almost every read, and much more of it as soon as the scope is being
 used.
 
-You can also use the NVRAM and EEPROM checksumming tool included in
-tdsNvramFloppyTool to check your NVRAM dumps.
+You can also use the NVRAM and EEPROM checksumming tool TDSNvrCV_2_0
+to check your NVRAM dumps.
 
 If you use the floppy method first, and then immediately flip the
 NVRAM protection switch and reboot it for GPIB dumping using
