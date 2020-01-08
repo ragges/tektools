@@ -128,7 +128,7 @@ tdsNvramFloppyTool is a set of scripts that are to be put on a floppy
 disk that will let the scope itself read or write NVRAM and EEPROM
 data to/from the floppy disks - no GPIB is needed.
 
-A **tool for checksumming NVRAM dumps**, written in Java, is also included.
+A **tool for checksumming NVRAM and EEPROM dumps**, written in Java, is also included.
 
 There is nothing Linux specific about it, but it is a very nice tool,
 and here is an extra version supplied, tdsNvramEepromFloppyDumper,
@@ -139,9 +139,11 @@ Addresses and sizes may have to be adjusted depending on model.
 To use them, format a floppy (preferably in the scope), copy the
 file(s) to the floppy, and boot the scope with the floppy inserted.
 
-For more information about using these scripts, see the 
-[thread on eevblog](https://www.eevblog.com/forum/testgear/tektronix-tds500600700-nvram-floppy-dump-tool/),
-or the info.txt and info-2.txt files in the directory.
+For more information about using these scripts and the checksumming
+tool, see the
+[thread on eevblog](https://www.eevblog.com/forum/testgear/tektronix-tds500600700-nvram-floppy-dump-tool/)
+(or the file README.txt), and the info.txt and info-2.txt files in the
+directory.
 
 ## Hint
 
@@ -152,10 +154,13 @@ data. Note that the first two bytes of the NVRAM changes between
 almost every read, and much more of it as soon as the scope is being
 used.
 
+You can also use the NVRAM and EEPROM checksumming tool included in
+tdsNvramFloppyTool to check your NVRAM dumps.
+
 If you use the floppy method first, and then immediately flip the
 NVRAM protection switch and reboot it for GPIB dumping using
-tektool/tekfwtool, only the first two bytes of the NVRAM should
-differ.
+tektool/tekfwtool, only the first few bytes of the NVRAM, the date and
+time, should differ.
 
 ## Built With
 
@@ -179,4 +184,4 @@ with it.
 
 * All the helpful people in the community that has made this possible
 * flyte at eevblog.com forum
-* Dr. Alberg Roserio at Tantratron
+* Dr. Albert Roseiro at Tantratron
