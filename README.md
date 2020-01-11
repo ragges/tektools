@@ -14,7 +14,7 @@ Release notes / change history is in [CHANGELOG.md](CHANGELOG.md)
 
 ### Prerequisites
 
-You need:
+You need some system to run it on, e.g.:
 * Linux based:
   * A Linux system
   * linux-gpib - [https://linux-gpib.sourceforge.io](https://linux-gpib.sourceforge.io)
@@ -24,7 +24,7 @@ You need:
   * National Instruments 488.2 drivers
   * A National Instruments GPIB adapter
 
-The programs have been tested for reading (making backups) with this setup:
+The programs have been tested for reading (making backups) with these setups:
 * Linux based:
   * Raspberry Pi (3B+)
   * Raspbian (version 9.11)
@@ -82,6 +82,10 @@ flash that contains the firmware.
 tekfwtool downloads a piece of 68k code to be able to write firmware
 to the flash faster, tektool does not.
 
+* tektool supports flash type 28F016SA (there is experimental support
+  for 28F160S5 that can be enabled with a `#define` in the program)
+* tektfwool supports flash types 28F016SA and 28F160S5
+
 The scope must be started with the NVRAM protection switch set to
 unprotected mode (the rocker switch behind the small holes on the
 right side of the scope). The scope starts in bootloader mode and
@@ -125,30 +129,38 @@ NVRAMs are correct for your model.
 ### tdsNvramFloppyTool and TDSNvrCV_2_0
 
 **tdsNvramFloppyTool** is a set of scripts that are to be put on a floppy
-disk that will let the scope itself read or write NVRAM and EEPROM
-data to/from the floppy disks - no GPIB is needed.
+disk that will let the scope itself read NVRAM and EEPROM
+data, or write NVRAM data, to/from the floppy disks - no GPIB is needed.
 
-**TDSNvrCV_2_0** is a tool for checksumming NVRAM and EEPROM dumps,
-written in Java.
-
-There is nothing Linux specific about these, but they are very nice
-tools, so they are included in this kit anyway.
+Addresses and sizes may have to be adjusted depending on model.
 
 In this kit there is also an extra version,
 tdsNvramEepromFloppyDumper, that dumps both the NVRAM and the EEPROMs
 to the floppy in one sweep.
 
-Addresses and sizes may have to be adjusted depending on model.
-
 To use the tdsNvramFloppyTool, format a floppy (preferably in the
 scope), copy the file(s) that do what you want to the floppy, and boot
 the scope with the floppy inserted.
+
+**TDSNvrCV_2_0** is a tool for checksumming NVRAM and EEPROM dumps,
+written in Java.
+
+Note that for checking EEPROM dumps taken with the getcaldata tool,
+you need to concatenate the two 256 byte files into one 512 byte
+file, and run the check on the new combined file:
+```
+cat U1052.bin U1055.bin > EEPROM_combined.bin
+java -cp TDSNvrCV_2_0.zip TDSNvramChecksumVerifier EEPROM_combined.bin
+```
 
 For more information about using these scripts and the checksumming
 tool, see the
 [thread on eevblog](https://www.eevblog.com/forum/testgear/tektronix-tds500600700-nvram-floppy-dump-tool/)
 (or the file README.txt), and the info.txt and info-2.txt files in the
 directory.
+
+There is nothing OS specific about these, but they are very nice
+tools, so they are included in this kit anyway.
 
 ## Hint
 
