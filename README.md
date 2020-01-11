@@ -21,8 +21,8 @@ You need some system to run it on, e.g.:
   * A GPIB adapter
 * MacOS based:
   * A MacOS system
-  * National Instruments 488.2 drivers
-  * A National Instruments GPIB adapter
+  * A 488.2 library, e.g. National Instruments 488.2 drivers
+  * A GPIB adapter
 
 The programs have been tested for reading (making backups) with these setups:
 * Linux based:
@@ -181,7 +181,10 @@ time, should differ.
 
 ## Built With
 
-* [linux-gpib](https://linux-gpib.sourceforge.io) - The GPIB driver and libraries
+* Linux
+  * [linux-gpib](https://linux-gpib.sourceforge.io) - The GPIB driver and libraries
+* MacOS
+  * [National Instruments 488.2 drivers](http://www.ni.com/sv-se/support/downloads/drivers.html)
 
 ## Links to sources
 
@@ -201,4 +204,5 @@ with it.
 
 * All the helpful people in the community that has made this possible
 * flyte at eevblog.com forum
+* Sven Schnelle (svens@stackframe.org>)
 * Dr. Albert Roseiro at Tantratron
