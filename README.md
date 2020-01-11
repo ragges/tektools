@@ -167,9 +167,8 @@ tools, so they are included in this kit anyway.
 You can use tektool, tekfwtool and getcaldata to get the data using
 GPIB, and tdsNvramFloppyTool to get it using a floppy, and compare the
 results to check that you have likely got correct and error free
-data. Note that the first two bytes of the NVRAM changes between
-almost every read, and much more of it as soon as the scope is being
-used.
+data. Note that the first few bytes of one of the the NVRAM chips is
+the clock, so it constantly changes.
 
 You can also use the NVRAM and EEPROM checksumming tool TDSNvrCV_2_0
 to check your NVRAM dumps.
