@@ -13,6 +13,7 @@
 - tektool - flash is now reset to read mode after identify
 - tektool - does not send password before writing - not needed in bootloader mode, and may be a problem with some firmware versions
 - tekfwtool - erasing 28F016SA flash now works (target.c/target.bin)
+- tekfwtool - flashing used bad indexing, fixed now (target.c/target.bin)
 
 ---
 
