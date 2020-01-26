@@ -203,5 +203,5 @@ with it.
 
 * All the helpful people in the community that has made this possible
 * flyte at eevblog.com forum
-* Sven Schnelle (svens@stackframe.org>)
+* Sven Schnelle (svens@stackframe.org)
 * Dr. Albert Roseiro at Tantratron
