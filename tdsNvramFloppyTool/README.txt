@@ -1,7 +1,13 @@
 
-From: https://www.eevblog.com/forum/testgear/tektronix-tds500600700-nvram-floppy-dump-tool/
+From:
+https://www.eevblog.com/forum/testgear/tektronix-tds500600700-nvram-floppy-dump-tool/
+
+Tektronix TDS500/600/700 NVRAM floppy backup and restore tool
 
 #####
+
+Tektronix TDS500/600/700 NVRAM floppy backup and restore tool
+« on: January 17, 2019, 05:48:31 pm »
 
 Hi all,
 
@@ -33,10 +39,17 @@ Made a new set of scripts v3, the previous download's nvram restore/write script
 
 Added a checksum verification tool so everyone can verify the dump taken has valid checksums on critical calibration data. Even though it contains checksum locations for a range of firmware versions and models, you may encounter an unrecognized NVRAM firmware prototype. Also, there may be locations in the NVRAM with other checksums than what is supported by the tool, but those verified by it are the critical ones regarding calibration and proper startup. It's written in Java, you need to install a Java JRE on your computer in order to use it. Run command example:
 
+Code: [Select]
 java -cp TDSNvrCV_1_0.zip TDSNvramChecksumVerifier DUMP.BIN
 
 -- EDIT/UPDATE 4:
 
 Added scripts to backup the factory calibration constants in the EEPROMs on acquisition boards of -B, -C and -D series scopes, starting with firmware v4.x. Check info.txt inside the archive. The checksum verifier has been updated to allow verification of the acquisition EEPROM dumps, and the tool will attempt to detect based on file size whether the dump is an NVRAM or acquisition EEPROM.
 
+Code: [Select]
 java -cp TDSNvrCV_2_0.zip TDSNvramChecksumVerifier DUMP.BIN
+
+-- EDIT/UPDATE 5:
+
+New version of the scripts which allow you to also write the EEPROMs on acquisition boards of -B, -C and -D series scopes, starting with firmware v4.x. Be very careful when using this function, you may permanently destroy your scope. Check info.txt inside the archive. The checksum verifier is now part of the archive.
+* tdsNvramFloppyTools_v5.zip (18.41 kB - downloaded 11 times.)

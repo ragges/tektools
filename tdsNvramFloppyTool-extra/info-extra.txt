@@ -1,6 +1,12 @@
 
 tdsNvramEepromFloppyDumper:
 
+A modified version of the dump scripts that dumps both the NVRAM and
+EEPROM in one sweep.
+
+NOTE - only works on the 5xx/6xx/7xx models -B, -C and -D series
+scopes, starting with firmware v4.x.
+
 Puts interactive messages on screen.  Dumps the nvram to a file called
 nvram.bin, and the acquistion calibration eeproms to a file called
 acqeeprm.bin.
@@ -11,4 +17,4 @@ The original is reported to work only on more recent scopes and
 firmwares such as the -C and -D series.
 
 
-Many rhanks to flyte at eevblog.com forum
+Many thanks to flyte at eevblog.com forum

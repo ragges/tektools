@@ -9,7 +9,7 @@ A-series, only have 0x80000 size of NVRAM, so you should adapt it
 accordingly.
 
 Extract the contents of each script folder, according to your
-requirement, to the root of an error-free FAT (not exFAT or FAT32!) 
+requirement, to the root of an error-free FAT (not exFAT nor FAT32!) 
 formatted floppy disk. For best compatibility, format it on
 the scope itself.
 
@@ -29,7 +29,7 @@ recent scopes and firmwares such as the -C and -D series.
 tdsNvramFloppyWriter:
 
 Puts interactive messages on screen, writes the nvram from a file 
-called writedmp.bin. This script uses an intermediate loading buffer 
+called WRITEDMP.BIN. This script uses an intermediate loading buffer 
 and only writes data to the NVRAM at the very last moment before 
 automatic reboot, so chances are minimal other processes can interfere
 with the procedure. Is reported to work only on more recent scopes and
@@ -67,20 +67,58 @@ in bootloader mode and it will not proceed to execute the script.
 tdsAcqEEPROMFloppyDumper and tdsAcqEEPROMMinimalFloppyDumper:
 
 
-Dumps the contents of the calibration constants 24C04 EEPROMs located
+Dumps the contents of the calibration constants 24C02 EEPROMs located
 on the acquisition boards of the -B, -C and -D series scopes, to a file.
 -A series scopes have no such EEPROMs on the acquisition board and
 store these constants in regular NVRAM, albeit in a hardware-protected
-region. Even though there are two 24C04 EEPROMs on the acquisition
-board, there is only support for reading one chip or 0x200 bytes.
-It appears no firmware is using the second chip. This has also been
-confirmed by others attempting to read the chips directly, i.e. that
-the second chip is always empty.
+region. Both 24C02 EEPROMs are read as 0x200 bytes in a single file,
+where the first EEPROM is the top 0x100 half of the file, and the second
+one the bottom half.
+
+
+tdsAcqEEPROMFloppyWriter and tdsAcqEEPROMMinimalFloppyWriter:
+
+Writes the contents of the given file EEWRDMP.BIN back into the 24C02
+EEPROMs found on the acquisition boards of the -B, -C and -D series scopes.
+The tool expects 0x200 bytes of dump data in this file, as produced
+by the corresponding read tool above. During the procedure, the calibration
+or write protection switch of the scope must be flipped. Follow the
+on-screen instructions. Do not forget to flip the switch back when done,
+or the scope will stay into bootloader mode and it won't start up.
+
+CAUTION: This tool may permanently destroy your scope. If the file is
+not present, the EEPROM will be erased with 0x00 data bytes!
+
+CAUTION: The minimal version of this tool is DANGEROUS as it attempts
+to write the EEPROMs without confirmation and then reboots. The write-
+protection switch must be flipped when device boots up, approximately
+when the display tests run. Use only as a last resort.
 
 
 
-No warranties and full disclaimer, be careful, these tools might 
+Checksum verifier tool:
+
+
+A checksum verifier tool is included which enables you to verify if the
+dumps taken are valid. The tool verifies sections of the dumps, and 
+computes the checksums which the firmware expects to be present. The 
+tool will automatically detect whether the file is an NVRAM dump or 
+acquisition EEPROM dump. Java runtime needs to be installed in order to 
+use it.
+
+In general, always use this tool to make sure the dumps you've made are
+actually valid backups!
+
+Command line usage:  
+
+java -cp TDSNvrCV_2_1.jar TDSNvramChecksumVerifier MY-DUMP.bin
+
+
+
+
+No warranties and full disclaimer apply, be careful, these tools might 
 permanently disable an oscilloscope if errors occur or if used improperly!
+Use at your own risk!
 
 
 You can use and/or modify these tools as you wish, but please be 

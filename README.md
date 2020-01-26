@@ -126,15 +126,13 @@ Just run it and it will dump the EEPROMs.
 You may want to double check that the addresses and sizes of the
 NVRAMs are correct for your model.
 
-### tdsNvramFloppyTool and TDSNvrCV_2_0
+### tdsNvramFloppyTool and TDSNvrCV_2_1
 
-**tdsNvramFloppyTool** is a set of scripts that are to be put on a floppy
-disk that will let the scope itself read NVRAM and EEPROM
-data, or write NVRAM data, to/from the floppy disks - no GPIB is needed.
+**tdsNvramFloppyTool** is a set of scripts that are to be put on a
+floppy disk that will let the scope itself read and write NVRAM and
+EEPROM data to/from floppy disks - no GPIB is needed.
 
-Addresses and sizes may have to be adjusted depending on model.
-
-In this kit there is also an extra version,
+In tdsNvramFloppyTool-extra there is also an extra version,
 tdsNvramEepromFloppyDumper, that dumps both the NVRAM and the EEPROMs
 to the floppy in one sweep.
 
@@ -142,7 +140,7 @@ To use the tdsNvramFloppyTool, format a floppy (preferably in the
 scope), copy the file(s) that do what you want to the floppy, and boot
 the scope with the floppy inserted.
 
-**TDSNvrCV_2_0** is a tool for checksumming NVRAM and EEPROM dumps,
+**TDSNvrCV_2_1** is a tool for checksumming NVRAM and EEPROM dumps,
 written in Java.
 
 Note that for checking EEPROM dumps taken with the getcaldata tool,
@@ -150,7 +148,7 @@ you need to concatenate the two 256 byte files into one 512 byte
 file, and run the check on the new combined file:
 ```
 cat U1052.bin U1055.bin > EEPROM_combined.bin
-java -cp TDSNvrCV_2_0.zip TDSNvramChecksumVerifier EEPROM_combined.bin
+java -cp TDSNvrCV_2_1.zip TDSNvramChecksumVerifier EEPROM_combined.bin
 ```
 
 For more information about using these scripts and the checksumming
@@ -170,8 +168,8 @@ results to check that you have likely got correct and error free
 data. Note that the first few bytes of one of the the NVRAM chips is
 the clock, so it constantly changes.
 
-You can also use the NVRAM and EEPROM checksumming tool TDSNvrCV_2_0
-to check your NVRAM dumps.
+You can also use the NVRAM and EEPROM checksumming tool TDSNvrCV_2_1
+to check your dumps.
 
 If you use the floppy method first, and then immediately flip the
 NVRAM protection switch and reboot it for GPIB dumping using
