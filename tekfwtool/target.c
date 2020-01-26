@@ -325,14 +325,14 @@ static void flash_program(struct cmd_params *params)
 		while (len >= 512) {
 			current_flash->program_page(base + offset, params->cmd->data + offset, 512);
 			len -= 512;
-			offset += 512;
+			offset += (512/4);
 		}
 	}
 
 	len /= 4;
 	for(i = 0; i < (int) len; i++) {
 		current_flash->program_single(base + offset, params->cmd->data[i]);
-		offset += 4;
+		offset += 1;
 	}
 	
 	params->hdr.cmd = 'P';
